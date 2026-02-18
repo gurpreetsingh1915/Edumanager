@@ -399,7 +399,7 @@ function downloadStudentReport() {
         </head>
         <body>
             <div class="branding-header">
-                <img src="https://via.placeholder.com/100" alt="Logo" class="institute-logo">
+                <img src="logo.jpg" alt="Institute Logo" class="institute-logo">
                 <h1 class="institute-name">ARMAN INSTITUTE</h1>
             </div>
             <div class="report-title">Student Performance Report</div>

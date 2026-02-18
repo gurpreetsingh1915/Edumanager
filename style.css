@@ -1,132 +1,135 @@
 :root {
     --primary: #2563eb;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --holiday: #3b82f6;
     --bg: #f8fafc;
-    --text: #1e293b;
-    --white: #ffffff;
+    --card: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
 }
 
-body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; color: var(--text-main); line-height: 1.5; }
 .app-container { display: flex; min-height: 100vh; }
 
-/* Sidebar */
-.sidebar { width: 260px; background: #1e293b; color: white; padding: 20px; display: flex; flex-direction: column; }
-.logo h2 { color: white; margin-bottom: 40px; }
+/* --- Sidebar --- */
+.sidebar { width: 260px; background: #0f172a; color: white; padding: 20px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+.logo h2 { color: white; margin-bottom: 30px; font-weight: 700; }
 .logo span { color: var(--primary); }
 ul { list-style: none; padding: 0; flex-grow: 1; }
-.nav-item { padding: 12px 15px; cursor: pointer; border-radius: 8px; margin-bottom: 10px; transition: 0.3s; }
-.nav-item.active, .nav-item:hover { background: var(--primary); }
+.nav-item { padding: 12px 15px; cursor: pointer; border-radius: 8px; margin-bottom: 5px; transition: all 0.2s; color: #94a3b8; }
+.nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+.nav-item.active { background: var(--primary); color: white; }
+.sidebar-footer { border-top: 1px solid #334155; padding-top: 20px; }
 
-/* Buttons */
-.btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
-.btn-report { width: 100%; padding: 10px; margin-bottom: 10px; background: transparent; border: 1px solid #3b82f6; color: #3b82f6; border-radius: 6px; cursor: pointer; }
-.btn-reset { width: 100%; background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 8px; border-radius: 6px; cursor: pointer; }
-.btn-present { background: #22c55e; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-.btn-absent { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-left: 5px; }
-
-/* Content Areas */
-.main-content { flex-grow: 1; padding: 40px; overflow-y: auto; }
+/* --- Main Content --- */
+.main-content { flex-grow: 1; padding: 30px; overflow-y: auto; }
 .content-section { display: none; }
 .content-section.active { display: block; }
-.card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 25px; }
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-.controls-row { display: flex; gap: 20px; align-items: center; }
-.search-container { flex-grow: 1; }
-.search-container input { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; }
+.card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e2e8f0; }
 
-/* Table */
-table { width: 100%; border-collapse: collapse; }
-th { text-align: left; padding: 12px; border-bottom: 2px solid #f1f5f9; color: #64748b; }
-td { padding: 15px 12px; border-bottom: 1px solid #f1f5f9; }
-.clickable-name { color: var(--primary); cursor: pointer; font-weight: bold; }
+/* --- Table Styles --- */
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th { text-align: left; padding: 12px; border-bottom: 2px solid #f1f5f9; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
 
-/* Status Badges */
-.status-active { color: #10b981; background: #ecfdf5; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
-.status-completed { color: #3b82f6; background: #eff6ff; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
-.status-dropped { color: #64748b; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+/* --- Buttons --- */
+.btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-present { background: var(--success); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn-absent { background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn-edit { background: #f1f5f9; color: #475569; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+.btn-report { width:100%; background: #334155; color: white; border: none; padding: 10px; border-radius: 6px; margin-bottom: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+.btn-reset { width:100%; background: #450a0a; color: #fecaca; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; }
 
-/* Modal */
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
-.modal-content { background: white; padding: 30px; border-radius: 12px; width: 400px; }
-.form-group { margin-bottom: 15px; }
-.form-group label { display: block; margin-bottom: 5px; font-size: 0.9rem; }
-.form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-/* Styling the New Student Dropdown in Financial Suite */
-select#feeStudentId {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background-color: #ffffff;
-    font-size: 0.95rem;
-    color: #1e293b;
-    cursor: pointer;
-    appearance: none; /* Removes default browser styling */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 16px;
-}
-
-select#feeStudentId:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-/* Making Student Names look like clickable Pro Links */
-.clickable-name {
-    color: var(--primary);
-    text-decoration: none;
-    font-weight: 600;
-    transition: color 0.2s ease;
-    display: inline-block;
-    padding: 2px 0;
-}
-
-.clickable-name:hover {
-    color: #1d4ed8;
-    text-decoration: underline;
-    text-underline-offset: 4px;
-}
-
-/* Status Badges for the Profile View */
-#profStatusBadge {
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    padding: 2px 8px;
-    border-radius: 12px;
-}
-
-/* Professional spacing for the Action Buttons in the table */
-.action-buttons {
+/* --- Profile Landscape View --- */
+.profile-landscape {
     display: flex;
-    gap: 8px;
-    align-items: center;
+    max-width: 950px !important;
+    width: 95%;
+    height: 90vh;
+    padding: 0 !important;
+    overflow: hidden;
+    background: #fff;
+    border: none;
 }
+.profile-sidebar {
+    width: 320px;
+    background: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+.profile-main { flex: 1; padding: 30px; overflow-y: auto; background: white; }
 
-.btn-edit {
+/* --- ID Badge --- */
+.id-badge {
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+}
+.id-photo { font-size: 64px; margin: 10px 0; display: block; }
+.id-number { color: var(--primary); font-weight: 800; font-size: 1.1rem; margin: 5px 0; }
+.id-details { text-align: left; margin-top: 20px; font-size: 0.85rem; border-top: 1px dashed #e2e8f0; padding-top: 15px; }
+.id-details p { margin: 8px 0; }
+
+/* --- Calendar Section --- */
+.calendar-section { margin-top: 25px; background: #fff; border-radius: 8px; }
+.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.calendar-nav { display: flex; align-items: center; gap: 15px; font-weight: bold; }
+
+.calendar-grid { 
+    display: grid; 
+    grid-template-columns: repeat(7, 1fr); 
+    gap: 6px; 
     background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #e2e8f0;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: all 0.2s;
+    padding: 10px;
+    border-radius: 8px;
 }
 
-.btn-edit:hover {
-    background: #e2e8f0;
-    color: #1e293b;
+.cal-day { 
+    aspect-ratio: 1/1; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 0.85rem; 
+    font-weight: 600;
+    border-radius: 6px; 
+    background: #fff; 
+    transition: transform 0.1s;
 }
-/* Styling the transaction list delete button */
-.transaction-log li button:hover {
-    text-decoration: underline;
-}
+.cal-day:not(.empty):hover { transform: scale(1.05); }
+.cal-day.empty { background: transparent; }
 
-/* Ensure Rupee font looks clean */
-#totalRevenue {
-    font-family: 'Inter', 'Segoe UI', sans-serif;
-    color: #059669; /* Emerald Green */
-}
+.cal-present { background: var(--success) !important; color: white; box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3); }
+.cal-absent { background: var(--danger) !important; color: white; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3); }
+.cal-holiday { background: var(--holiday) !important; color: white; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3); }
+
+/* --- Stats & Payments --- */
+.stats-row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+.stat-box { background: #f8fafc; padding: 20px; border-radius: 12px; border-bottom: 4px solid var(--primary); text-align: center; }
+.stat-box h2 { margin: 5px 0 0 0; color: var(--text-main); }
+
+.payment-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
+.payment-section h4 { margin-bottom: 10px; color: var(--text-muted); }
+
+/* --- Modals --- */
+.modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+.modal-content { background: white; padding: 30px; border-radius: 16px; width: 100%; max-width: 450px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.btn-close { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-weight: 600; }
+
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: var(--text-muted); }
+.form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; }
+
+/* --- Attendance Status Colors --- */
+.status-active { color: var(--success); font-weight: bold; background: #f0fdf4; padding: 4px 8px; border-radius: 4px; }
+.status-completed { color: var(--primary); font-weight: bold; background: #eff6ff; padding: 4px 8px; border-radius: 4px; }
+.status-dropped { color: var(--danger); font-weight: bold; background: #fef2f2; padding: 4px 8px; border-radius: 4px; }

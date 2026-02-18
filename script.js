@@ -1,8 +1,12 @@
 // --- DATA INITIALIZATION ---
-// These keys must match exactly in both saveData and importBackup
-let students = JSON.parse(localStorage.getItem('stuData')) || [];
-let transactions = JSON.parse(localStorage.getItem('transData')) || [];
-let attendanceRegistry = JSON.parse(localStorage.getItem('attendanceRegistry')) || {};
+// Key names used for LocalStorage
+const STU_KEY = 'stuData';
+const TRANS_KEY = 'transData';
+const ATT_KEY = 'attendanceRegistry';
+
+let students = JSON.parse(localStorage.getItem(STU_KEY)) || [];
+let transactions = JSON.parse(localStorage.getItem(TRANS_KEY)) || [];
+let attendanceRegistry = JSON.parse(localStorage.getItem(ATT_KEY)) || {};
 
 window.onload = () => {
     const dateInput = document.getElementById('attendanceDate');
@@ -15,18 +19,57 @@ window.onload = () => {
 };
 
 function saveData() {
-    localStorage.setItem('stuData', JSON.stringify(students));
-    localStorage.setItem('transData', JSON.stringify(transactions));
-    localStorage.setItem('attendanceRegistry', JSON.stringify(attendanceRegistry));
+    localStorage.setItem(STU_KEY, JSON.stringify(students));
+    localStorage.setItem(TRANS_KEY, JSON.stringify(transactions));
+    localStorage.setItem(ATT_KEY, JSON.stringify(attendanceRegistry));
 }
 
-// --- SEARCH & ACADEMIC LOGIC ---
+// --- SMART IMPORT LOGIC (The Fix) ---
+function importBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            // This part looks for any student list, even if the name is slightly different
+            const backupStudents = importedData.students || importedData.stuData || importedData.studentData;
+            const backupTrans = importedData.transactions || importedData.transData || importedData.paymentData;
+            const backupAtt = importedData.attendanceRegistry || importedData.attData;
+
+            if (backupStudents && Array.isArray(backupStudents)) {
+                // Confirm with the user
+                if (confirm(`Found ${backupStudents.length} students. Overwrite current data?`)) {
+                    // Update global variables
+                    students = backupStudents;
+                    transactions = backupTrans || [];
+                    attendanceRegistry = backupAtt || {};
+
+                    // Save to LocalStorage immediately
+                    saveData();
+                    
+                    alert("Import Successful! Reloading your dashboard...");
+                    location.reload(); 
+                }
+            } else {
+                alert("This file doesn't seem to contain a valid student list.");
+            }
+        } catch (err) {
+            alert("Error reading file: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+// --- SEARCH & ACADEMIC ---
 function filterStudents() {
     const query = document.getElementById('studentSearch').value.toLowerCase();
     const filtered = students.filter(s => 
         s.name.toLowerCase().includes(query) || 
         s.course.toLowerCase().includes(query) ||
-        s.status.toLowerCase().includes(query) ||
+        (s.status && s.status.toLowerCase().includes(query)) ||
         s.id.includes(query)
     );
     renderAttendance(filtered);
@@ -72,7 +115,7 @@ function toggleAttendance(date, stuId, status) {
     renderAttendance();
 }
 
-// --- FINANCIAL LOGIC (Rupee & Delete) ---
+// --- FINANCIAL ---
 function refreshStudentDropdown() {
     const dropdown = document.getElementById('feeStudentId');
     if (!dropdown) return;
@@ -131,7 +174,6 @@ function updateFinancialSummary() {
     if (countEl) countEl.innerText = transactions.length;
 }
 
-// --- BACKUP & IMPORT (FORCE RELOAD FIX) ---
 function exportBackup() {
     const data = {
         students: students,
@@ -142,34 +184,8 @@ function exportBackup() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `EduManager_Backup_${new Date().toLocaleDateString()}.json`;
+    a.download = `EduManager_Backup_${new Date().toLocaleDateString().replace(/\//g, '-')}.json`;
     a.click();
-}
-
-function importBackup(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const importedData = JSON.parse(e.target.result);
-            if (importedData.students) {
-                // Set exactly the same keys used in Data Initialization
-                localStorage.setItem('stuData', JSON.stringify(importedData.students));
-                localStorage.setItem('transData', JSON.stringify(importedData.transactions || []));
-                localStorage.setItem('attendanceRegistry', JSON.stringify(importedData.attendanceRegistry || {}));
-                
-                alert("Import Successful! Page will reload now.");
-                location.reload(); 
-            } else {
-                alert("File format not recognized.");
-            }
-        } catch (err) {
-            alert("Error: " + err.message);
-        }
-    };
-    reader.readAsText(file);
 }
 
 // --- PROFILE & MODALS ---
@@ -200,6 +216,8 @@ function handleStudentSubmit() {
     const date = document.getElementById('newStuJoinDate').value;
     const status = document.getElementById('newStuStatus').value;
 
+    if (!name || !course) return alert("Please fill Name and Course");
+
     if (id) {
         const idx = students.findIndex(s => s.id === id);
         students[idx] = { ...students[idx], name, course, joiningDate: date, status };
@@ -215,6 +233,8 @@ function handleStudentSubmit() {
 function openAddModal() {
     document.getElementById('modalTitle').innerText = "Add Student";
     document.getElementById('editStudentId').value = "";
+    document.getElementById('newStuName').value = "";
+    document.getElementById('newStuCourse').value = "";
     document.getElementById('newStuJoinDate').value = new Date().toISOString().split('T')[0];
     openModal('studentModal');
 }

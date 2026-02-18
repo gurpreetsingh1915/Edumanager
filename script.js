@@ -200,3 +200,56 @@ function showSection(id, btn) {
 function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 function resetSystem() { if(confirm("Wipe all data?")) { localStorage.clear(); location.reload(); } }
+// --- UPDATED DATA BACKUP & IMPORT LOGIC ---
+
+// 1. Export Function (Already had this, but ensuring it matches)
+function exportBackup() {
+    const data = {
+        students: students,
+        transactions: transactions,
+        attendanceRegistry: attendanceRegistry
+    };
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `EduManager_Backup_${new Date().toLocaleDateString()}.json`;
+    a.click();
+}
+
+// 2. New Import Function
+function importBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            if (importedData.students && importedData.transactions) {
+                // Confirm with user
+                if (confirm("This will replace your current data with the backup file. Continue?")) {
+                    students = importedData.students;
+                    transactions = importedData.transactions;
+                    attendanceRegistry = importedData.attendanceRegistry || {};
+                    
+                    saveData(); // Save to localStorage
+                    
+                    // Refresh the entire UI
+                    refreshStudentDropdown();
+                    renderAttendance();
+                    renderTransactions();
+                    updateFinancialSummary();
+                    
+                    alert("Data imported successfully!");
+                }
+            } else {
+                alert("Invalid backup file format.");
+            }
+        } catch (err) {
+            alert("Error reading file: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+}

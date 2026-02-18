@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduManager Pro | Institute Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">
+                <h2>EduManager <span>Pro</span></h2>
+            </div>
+            <ul>
+                <li class="nav-item active" onclick="showSection('academic', this)">Academic Suite</li>
+                <li class="nav-item" onclick="showSection('financial', this)">Financial Suite</li>
+            </ul>
+            <div class="sidebar-footer">
+                <button onclick="exportBackup()" class="btn-report">Export Backup (.json)</button>
+                <button onclick="generateMonthlyReport()" class="btn-report">Download Monthly Report</button>
+                <button onclick="resetSystem()" class="btn-reset">Reset All Data</button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <section id="academic" class="content-section active">
+                <div class="header">
+                    <h1>Academic Management</h1>
+                    <button class="btn-primary" onclick="openAddModal()">+ Add Student</button>
+                </div>
+
+                <div class="controls-row card">
+                    <div class="search-container">
+                        <input type="text" id="studentSearch" placeholder="Search by name, course, or status..." onkeyup="filterStudents()">
+                    </div>
+                    <div class="date-selector">
+                        <label for="attendanceDate">Attendance Date:</label>
+                        <input type="date" id="attendanceDate" onchange="renderAttendance()">
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>Student Attendance & Records</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Student Name</th>
+                                <th>Course</th>
+                                <th>Status</th>
+                                <th>Daily Attendance</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceList"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="financial" class="content-section">
+                <div class="header">
+                    <h1>Financial Suite</h1>
+                </div>
+                
+                <div class="stats-bar">
+                    <div class="stat-card">
+                        <span>Total Revenue</span>
+                        <h2 id="totalRevenue">₹0.00</h2>
+                    </div>
+                    <div class="stat-card">
+                        <span>Total Transactions</span>
+                        <h2 id="totalTransCount">0</h2>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>Collect Fees</h3>
+                        <div class="form-group">
+                            <label>Select Student</label>
+                            <select id="feeStudentId">
+                                <option value="">-- Choose Student --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount Paid (₹)</label>
+                            <input type="number" id="feeAmount" placeholder="0.00">
+                        </div>
+                        <button class="btn-primary" onclick="generateInvoice()">Generate & Save Receipt</button>
+                    </div>
+                    <div class="card">
+                        <h3>Transaction History</h3>
+                        <ul id="transactionList" class="transaction-log"></ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="studentModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Add New Student</h3>
+            <input type="hidden" id="editStudentId">
+            <div class="form-group"><label>Full Name</label><input type="text" id="newStuName"></div>
+            <div class="form-group"><label>Course Name</label><input type="text" id="newStuCourse"></div>
+            <div class="form-group"><label>Joining Date</label><input type="date" id="newStuJoinDate"></div>
+            <div class="form-group">
+                <label>Student Status</label>
+                <select id="newStuStatus">
+                    <option value="Active">Active</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Dropped">Dropped</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="handleStudentSubmit()">Save Changes</button>
+                <button onclick="closeModal('studentModal')" class="btn-close">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="profileModal" class="modal">
+        <div class="modal-content profile-card">
+            <h2 id="profName">Student Name</h2>
+            <span id="profID">#0000</span>
+            <hr>
+            <div class="profile-body">
+                <p><strong>Course:</strong> <span id="profCourse">---</span></p>
+                <p><strong>Joining Date:</strong> <span id="profJoin">---</span></p>
+                <div class="stats-row">
+                    <div class="stat-item"><label>Attendance</label><h3 id="profAttendance">0%</h3></div>
+                    <div class="stat-item"><label>Total Paid</label><h3 id="profFees">₹0</h3></div>
+                </div>
+                <h4>Payment History</h4>
+                <ul id="profTransList"></ul>
+            </div>
+            <button onclick="closeModal('profileModal')" class="btn-primary">Close</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

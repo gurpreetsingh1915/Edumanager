@@ -1,0 +1,132 @@
+:root {
+    --primary: #2563eb;
+    --bg: #f8fafc;
+    --text: #1e293b;
+    --white: #ffffff;
+}
+
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+.app-container { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar { width: 260px; background: #1e293b; color: white; padding: 20px; display: flex; flex-direction: column; }
+.logo h2 { color: white; margin-bottom: 40px; }
+.logo span { color: var(--primary); }
+ul { list-style: none; padding: 0; flex-grow: 1; }
+.nav-item { padding: 12px 15px; cursor: pointer; border-radius: 8px; margin-bottom: 10px; transition: 0.3s; }
+.nav-item.active, .nav-item:hover { background: var(--primary); }
+
+/* Buttons */
+.btn-primary { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+.btn-report { width: 100%; padding: 10px; margin-bottom: 10px; background: transparent; border: 1px solid #3b82f6; color: #3b82f6; border-radius: 6px; cursor: pointer; }
+.btn-reset { width: 100%; background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 8px; border-radius: 6px; cursor: pointer; }
+.btn-present { background: #22c55e; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+.btn-absent { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-left: 5px; }
+
+/* Content Areas */
+.main-content { flex-grow: 1; padding: 40px; overflow-y: auto; }
+.content-section { display: none; }
+.content-section.active { display: block; }
+.card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 25px; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.controls-row { display: flex; gap: 20px; align-items: center; }
+.search-container { flex-grow: 1; }
+.search-container input { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: 12px; border-bottom: 2px solid #f1f5f9; color: #64748b; }
+td { padding: 15px 12px; border-bottom: 1px solid #f1f5f9; }
+.clickable-name { color: var(--primary); cursor: pointer; font-weight: bold; }
+
+/* Status Badges */
+.status-active { color: #10b981; background: #ecfdf5; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+.status-completed { color: #3b82f6; background: #eff6ff; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+.status-dropped { color: #64748b; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+/* Modal */
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+.modal-content { background: white; padding: 30px; border-radius: 12px; width: 400px; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; font-size: 0.9rem; }
+.form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+/* Styling the New Student Dropdown in Financial Suite */
+select#feeStudentId {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background-color: #ffffff;
+    font-size: 0.95rem;
+    color: #1e293b;
+    cursor: pointer;
+    appearance: none; /* Removes default browser styling */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+}
+
+select#feeStudentId:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Making Student Names look like clickable Pro Links */
+.clickable-name {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+    display: inline-block;
+    padding: 2px 0;
+}
+
+.clickable-name:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+/* Status Badges for the Profile View */
+#profStatusBadge {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+/* Professional spacing for the Action Buttons in the table */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-edit {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-edit:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+/* Styling the transaction list delete button */
+.transaction-log li button:hover {
+    text-decoration: underline;
+}
+
+/* Ensure Rupee font looks clean */
+#totalRevenue {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    color: #059669; /* Emerald Green */
+}

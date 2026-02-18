@@ -1,4 +1,5 @@
 // --- DATA INITIALIZATION ---
+// These keys must match exactly in both saveData and importBackup
 let students = JSON.parse(localStorage.getItem('stuData')) || [];
 let transactions = JSON.parse(localStorage.getItem('transData')) || [];
 let attendanceRegistry = JSON.parse(localStorage.getItem('attendanceRegistry')) || {};
@@ -15,11 +16,11 @@ window.onload = () => {
 
 function saveData() {
     localStorage.setItem('stuData', JSON.stringify(students));
-    localStorage.setItem('attendanceRegistry', JSON.stringify(attendanceRegistry));
     localStorage.setItem('transData', JSON.stringify(transactions));
+    localStorage.setItem('attendanceRegistry', JSON.stringify(attendanceRegistry));
 }
 
-// --- FIXED SEARCH & ATTENDANCE ---
+// --- SEARCH & ACADEMIC LOGIC ---
 function filterStudents() {
     const query = document.getElementById('studentSearch').value.toLowerCase();
     const filtered = students.filter(s => 
@@ -34,6 +35,8 @@ function filterStudents() {
 function renderAttendance(dataToRender = students) {
     const selectedDate = document.getElementById('attendanceDate').value;
     const list = document.getElementById('attendanceList');
+    if (!list) return;
+    
     const dayRecord = attendanceRegistry[selectedDate] || {};
 
     list.innerHTML = dataToRender.map(s => {
@@ -79,11 +82,12 @@ function refreshStudentDropdown() {
 
 function renderTransactions() {
     const list = document.getElementById('transactionList');
+    if (!list) return;
     list.innerHTML = transactions.map((t, index) => `
         <li style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
             <span><strong>${t.name}</strong><br><small>${t.date}</small></span>
             <div style="text-align:right">
-                <span style="color:#22c55e; font-weight:bold; display:block;">+₹${t.amount.toLocaleString('en-IN')}</span>
+                <span style="color:#22c55e; font-weight:bold; display:block;">+₹${Number(t.amount).toLocaleString('en-IN')}</span>
                 <button onclick="deleteTransaction(${index})" style="color:#ef4444; border:none; background:none; cursor:pointer; font-size:0.75rem;">Delete</button>
             </div>
         </li>
@@ -117,13 +121,55 @@ function generateInvoice() {
     renderTransactions();
     updateFinancialSummary();
     document.getElementById('feeAmount').value = "";
-    alert("Payment recorded!");
 }
 
 function updateFinancialSummary() {
-    const total = transactions.reduce((sum, t) => sum + t.amount, 0);
-    document.getElementById('totalRevenue').innerText = `₹${total.toLocaleString('en-IN')}`;
-    document.getElementById('totalTransCount').innerText = transactions.length;
+    const total = transactions.reduce((sum, t) => sum + Number(t.amount), 0);
+    const revenueEl = document.getElementById('totalRevenue');
+    const countEl = document.getElementById('totalTransCount');
+    if (revenueEl) revenueEl.innerText = `₹${total.toLocaleString('en-IN')}`;
+    if (countEl) countEl.innerText = transactions.length;
+}
+
+// --- BACKUP & IMPORT (FORCE RELOAD FIX) ---
+function exportBackup() {
+    const data = {
+        students: students,
+        transactions: transactions,
+        attendanceRegistry: attendanceRegistry
+    };
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `EduManager_Backup_${new Date().toLocaleDateString()}.json`;
+    a.click();
+}
+
+function importBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            if (importedData.students) {
+                // Set exactly the same keys used in Data Initialization
+                localStorage.setItem('stuData', JSON.stringify(importedData.students));
+                localStorage.setItem('transData', JSON.stringify(importedData.transactions || []));
+                localStorage.setItem('attendanceRegistry', JSON.stringify(importedData.attendanceRegistry || {}));
+                
+                alert("Import Successful! Page will reload now.");
+                location.reload(); 
+            } else {
+                alert("File format not recognized.");
+            }
+        } catch (err) {
+            alert("Error: " + err.message);
+        }
+    };
+    reader.readAsText(file);
 }
 
 // --- PROFILE & MODALS ---
@@ -141,7 +187,8 @@ function viewProfile(id) {
     document.getElementById('profAttendance').innerText = dates > 0 ? ((present/dates)*100).toFixed(1) + "%" : "0%";
 
     const personalFees = transactions.filter(t => t.studentId === id);
-    document.getElementById('profFees').innerText = `₹${personalFees.reduce((sum, t) => sum + t.amount, 0)}`;
+    const totalPaid = personalFees.reduce((sum, t) => sum + Number(t.amount), 0);
+    document.getElementById('profFees').innerText = `₹${totalPaid.toLocaleString('en-IN')}`;
     document.getElementById('profTransList').innerHTML = personalFees.map(t => `<li>${t.date}: ₹${t.amount}</li>`).join('') || 'No records';
     openModal('profileModal');
 }
@@ -163,14 +210,6 @@ function handleStudentSubmit() {
     refreshStudentDropdown();
     renderAttendance();
     closeModal('studentModal');
-}
-
-function exportBackup() {
-    const blob = new Blob([JSON.stringify({students, transactions, attendanceRegistry})], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `Backup_${new Date().toLocaleDateString()}.json`;
-    a.click();
 }
 
 function openAddModal() {
@@ -199,57 +238,4 @@ function showSection(id, btn) {
 }
 function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function resetSystem() { if(confirm("Wipe all data?")) { localStorage.clear(); location.reload(); } }
-// --- UPDATED DATA BACKUP & IMPORT LOGIC ---
-
-// 1. Export Function (Already had this, but ensuring it matches)
-function exportBackup() {
-    const data = {
-        students: students,
-        transactions: transactions,
-        attendanceRegistry: attendanceRegistry
-    };
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `EduManager_Backup_${new Date().toLocaleDateString()}.json`;
-    a.click();
-}
-
-// 2. New Import Function
-function importBackup(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const importedData = JSON.parse(e.target.result);
-            
-            if (importedData.students && importedData.transactions) {
-                // Confirm with user
-                if (confirm("This will replace your current data with the backup file. Continue?")) {
-                    students = importedData.students;
-                    transactions = importedData.transactions;
-                    attendanceRegistry = importedData.attendanceRegistry || {};
-                    
-                    saveData(); // Save to localStorage
-                    
-                    // Refresh the entire UI
-                    refreshStudentDropdown();
-                    renderAttendance();
-                    renderTransactions();
-                    updateFinancialSummary();
-                    
-                    alert("Data imported successfully!");
-                }
-            } else {
-                alert("Invalid backup file format.");
-            }
-        } catch (err) {
-            alert("Error reading file: " + err.message);
-        }
-    };
-    reader.readAsText(file);
-}
+function resetSystem() { if(confirm("This will PERMANENTLY delete all data. Continue?")) { localStorage.clear(); location.reload(); } }

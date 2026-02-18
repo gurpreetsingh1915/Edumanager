@@ -16,11 +16,17 @@
                 <li class="nav-item active" onclick="showSection('academic', this)">Academic Suite</li>
                 <li class="nav-item" onclick="showSection('financial', this)">Financial Suite</li>
             </ul>
-            <div class="sidebar-footer">
-                <button onclick="exportBackup()" class="btn-report">Export Backup (.json)</button>
-                <button onclick="generateMonthlyReport()" class="btn-report">Download Monthly Report</button>
-                <button onclick="resetSystem()" class="btn-reset">Reset All Data</button>
-            </div>
+           <div class="sidebar-footer">
+    <button onclick="exportBackup()" class="btn-report">Export Backup (.json)</button>
+    
+    <label for="importFile" class="btn-report" style="cursor:pointer; display:block; text-align:center;">
+        Import Backup
+    </label>
+    <input type="file" id="importFile" style="display:none" onchange="importBackup(event)">
+    
+    <button onclick="generateMonthlyReport()" class="btn-report">Download Monthly Report</button>
+    <button onclick="resetSystem()" class="btn-reset">Reset All Data</button>
+</div>
         </nav>
 
         <main class="main-content">

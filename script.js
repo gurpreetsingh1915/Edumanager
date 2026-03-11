@@ -23,7 +23,7 @@ function initSystem() {
     updateAcademicStats();
     updateCourseDropdown();
     refreshStudentDropdown();
-    renderEnrolmentTable();
+    renderEnrolmentTable(); // Make sure this line exists!
     renderAttendance();
     updateFinancialSummary();
     renderTransactions();
@@ -52,22 +52,16 @@ function showSection(id, btn) {
 function filterStudents() {
     const searchQuery = document.getElementById('studentSearch').value.toLowerCase();
     const courseQuery = document.getElementById('courseFilter').value;
-    const statusQuery = document.getElementById('statusFilter').value; // Get Status Value
+    const statusQuery = document.getElementById('statusFilter').value;
 
     const filtered = students.filter(s => {
         const matchesSearch = s.name.toLowerCase().includes(searchQuery) || s.id.includes(searchQuery);
         const matchesCourse = (courseQuery === "All" || s.course === courseQuery);
-        
-        // Match status (default to 'Active' if status is missing in record)
-        const currentStatus = s.status || "Active";
-        const matchesStatus = (statusQuery === "All" || currentStatus === statusQuery);
-        
+        const matchesStatus = (statusQuery === "All" || (s.status || "Active") === statusQuery);
         return matchesSearch && matchesCourse && matchesStatus;
     });
 
-    // Update the tables with the triple-filtered list
     renderEnrolmentTable(filtered);
-    renderAttendance(filtered);
 }
 
 function renderEnrolmentTable(dataToRender = students) {
@@ -193,16 +187,27 @@ function renderTransactions() {
     const list = document.getElementById('transactionList');
     if (!list) return;
 
-    // Create labeled logs so we know where they came from
-    const incomeLogs = transactions.map((t, idx) => ({ ...t, type: 'Income', originalIndex: idx }));
-    const expenseLogs = expenses.map((e, idx) => ({ ...e, type: 'Expense', name: e.category, originalIndex: idx }));
+    // We map both, ensuring we use 'name' for both so the list can display them
+    const incomeLogs = transactions.map((t, idx) => ({ 
+        ...t, 
+        type: 'Income', 
+        displayName: t.name, 
+        originalIndex: idx 
+    }));
+    
+    const expenseLogs = expenses.map((e, idx) => ({ 
+        ...e, 
+        type: 'Expense', 
+        displayName: e.category, // Use category as the name for expenses
+        originalIndex: idx 
+    }));
 
     const allLogs = [...incomeLogs, ...expenseLogs];
 
     list.innerHTML = allLogs.map(item => `
         <li style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
             <span>
-                <strong style="color: ${item.type === 'Income' ? '#22c55e' : '#ef4444'}">${item.type}</strong>: ${item.name}
+                <strong style="color: ${item.type === 'Income' ? '#22c55e' : '#ef4444'}">${item.type}</strong>: ${item.displayName}
                 <br><small style="color:#64748b;">${item.date}</small>
             </span>
             <div style="text-align: right; display: flex; align-items: center; gap: 8px;">
@@ -463,3 +468,4 @@ function previewImage(input) {
     };
     if (file) reader.readAsDataURL(file);
 }
+

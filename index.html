@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduManager Pro | Arman Institute</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -44,33 +45,34 @@
                     <div class="stat-card"><span>Active Now</span><h2 id="activeStudentCount" style="color: #22c55e;">0</h2></div>
                 </div>
                 <div class="card">
-                    <div class="search-container" style="display: flex; gap: 10px;">
-    <input type="text" id="studentSearch" placeholder="Search by name, course, or ID..." onkeyup="filterStudents()" style="flex: 2;">
-    
-    <select id="courseFilter" onchange="filterStudents()" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-        <option value="All">All Courses</option>
-    </select>
-
-    <select id="statusFilter" onchange="filterStudents()" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-        <option value="All">All Statuses</option>
-        <option value="Active">Active Only</option>
-        <option value="Completed">Completed</option>
-        <option value="Dropped">Dropped</option>
-    </select>
-</div>
-                    <table style="margin-top: 15px;">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Course</th>
-            <th>Joining Date</th>
-            <th>Status</th> <th>ID Card</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody id="enrolmentList"></tbody>
-</table>
+                    <div class="search-container" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" id="studentSearch" placeholder="Search by name, course, or ID..." onkeyup="filterStudents()" style="flex: 2; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <select id="courseFilter" onchange="filterStudents()" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <option value="All">All Courses</option>
+                        </select>
+                        <select id="statusFilter" onchange="filterStudents()" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <option value="All">All Statuses</option>
+                            <option value="Active">Active Only</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Dropped">Dropped</option>
+                        </select>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Course</th>
+                                    <th>Joining Date</th>
+                                    <th>Status</th>
+                                    <th>ID Card</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="enrolmentList"></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -146,32 +148,28 @@
                     <div class="stat-card"><span>Net Profit</span><h2 id="netProfit" style="color: #3b82f6;">₹0</h2></div>
                 </div>
                 <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h3>Transaction Log</h3>
                         <button class="btn-edit" onclick="showMonthlyRevenue()">Monthly Analysis</button>
                     </div>
-                    <div id="monthlyReportContainer"></div>
+                    <div id="monthlyReportContainer" class="card" style="display:none; background: #f8fafc; margin-bottom: 20px;"></div>
                     <ul id="transactionList" class="transaction-log"></ul>
                 </div>
             </section>
-            <section id="verify-student" class="content-section">
-    <div class="header">
-        <h1>Verify Student Record</h1>
-    </div>
-    
-    <div class="card">
-        <div class="form-group" style="display: flex; gap: 10px; align-items: flex-end;">
-            <div style="flex-grow: 1;">
-                <label>Enter Student ID to Verify</label>
-                <input type="text" id="verifyInput" placeholder="e.g. 1024">
-            </div>
-            <button class="btn-primary" onclick="verifyStudent()">Search Record</button>
-        </div>
-    </div>
 
-    <div id="verifyResult" style="display:none;">
-        </div>
-</section>
+            <section id="verify-student" class="content-section">
+                <div class="header"><h1>Verify Student Record</h1></div>
+                <div class="card">
+                    <div class="form-group" style="display: flex; gap: 10px; align-items: flex-end;">
+                        <div style="flex-grow: 1;">
+                            <label>Enter Student ID to Verify</label>
+                            <input type="text" id="verifyInput" placeholder="e.g. 1024">
+                        </div>
+                        <button class="btn-primary" onclick="verifyStudent()">Search Record</button>
+                    </div>
+                </div>
+                <div id="verifyResult" class="card" style="display:none;"></div>
+            </section>
         </main>
     </div>
 
@@ -181,10 +179,10 @@
             <input type="hidden" id="editStudentId">
             <div class="form-group"><label>Full Name</label><input type="text" id="newStuName"></div>
             <div class="form-group">
-    <label>Student Photo</label>
-    <input type="file" id="newStuPhoto" accept="image/*" onchange="previewImage(this)">
-    <img id="modalPhotoPreview" src="" style="display:none; width:50px; height:50px; border-radius:50%; margin-top:5px; object-fit:cover;">
-</div>
+                <label>Student Photo</label>
+                <input type="file" id="newStuPhoto" accept="image/*" onchange="previewImage(this)">
+                <img id="modalPhotoPreview" src="" style="display:none; width:60px; height:60px; border-radius:50%; margin-top:5px; object-fit:cover; border: 2px solid #ddd;">
+            </div>
             <div class="form-group"><label>Course Name</label><input type="text" id="newStuCourse"></div>
             <div class="form-group"><label>Duration (Months)</label><input type="number" id="newStuDuration" placeholder="e.g. 6"></div>
             <div class="form-group"><label>Mobile Number</label><input type="tel" id="newStuMobile"></div>
@@ -209,9 +207,9 @@
             <div class="profile-sidebar">
                 <div class="id-badge">
                     <div class="id-header">STUDENT ID</div>
-                   <div class="id-photo">
-    <img id="profPhotoImg" src="" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid #2563eb;">
-</div>
+                    <div class="id-photo">
+                        <img id="profPhotoImg" src="" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid #2563eb;">
+                    </div>
                     <h2 id="profName">Student Name</h2>
                     <p id="profID" class="id-number">#0000</p>
                     <div class="id-details">
@@ -249,43 +247,41 @@
     </div>
 
     <div id="printIdCardArea" style="display:none;">
-        <div style="width: 350px; border: 3px solid #2563eb; border-radius: 15px; font-family: sans-serif; padding: 20px; color: #1e293b; background: white;">
+        <div id="idCardContent" style="width: 350px; border: 3px solid #2563eb; border-radius: 15px; font-family: sans-serif; padding: 20px; color: #1e293b; background: white;">
             <div style="text-align: center; border-bottom: 2px solid #2563eb; margin-bottom: 15px;">
                 <h2 style="margin: 0; color: #2563eb;">ARMAN INSTITUTE</h2>
-                <p style="margin: 0 0 10px 0; font-size: 12px; font-weight: bold; color: #64748b;">CHAK SHARIF | EDUCATIONAL EXCELLENCE</p>
+                <p style="margin: 0 0 10px 0; font-size: 11px; font-weight: bold; color: #64748b;">CHAK SHARIF | EDUCATIONAL EXCELLENCE</p>
             </div>
             <div style="display: flex; gap: 15px; align-items: center;">
-                <div id="printPhotoContainer" style="width: 80px; height: 80px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f8fafc;">
-                    <span style="font-size: 40px;">👤</span>
+                <div id="printPhotoContainer" style="width: 85px; height: 85px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f8fafc;">
+                    <img id="printPhotoImg" src="" style="width:100%; height:100%; object-fit:cover; display:none;">
+                    <span id="printPhotoPlaceholder" style="font-size: 40px;">👤</span>
                 </div>
-                <div style="font-size: 14px; line-height: 1.8;">
+                <div style="font-size: 13px; line-height: 1.6;">
                     <p style="margin:0;"><strong>NAME:</strong> <span id="idCardName"></span></p>
                     <p style="margin:0;"><strong>ID:</strong> <span id="idCardID"></span></p>
                     <p style="margin:0;"><strong>COURSE:</strong> <span id="idCardCourse"></span></p>
                     <p style="margin:0;"><strong>JOINED:</strong> <span id="idCardJoin"></span></p>
                 </div>
             </div>
-            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #cbd5e1; font-size: 10px; text-align: center; color: #94a3b8;">
-                Authorized Signature & Institute Stamp
+            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #cbd5e1; font-size: 9px; text-align: center; color: #94a3b8;">
+                This card is property of Arman Institute.
             </div>
         </div>
     </div>
-    </div>
-<div id="loginModal" class="modal" style="display: flex;">
-    <div class="modal-content" style="text-align: center;">
-        <div class="logo"><h2>ARMAN <span>INSTITUTE</span></h2></div>
-        <p>Admin Access Required</p>
-        <div class="form-group">
-            <input type="password" id="adminPassInput" placeholder="Enter Admin Password">
+
+    <div id="loginModal" class="modal" style="display: flex;">
+        <div class="modal-content" style="text-align: center; max-width: 400px;">
+            <div class="logo"><h2>ARMAN <span>INSTITUTE</span></h2></div>
+            <p style="margin-bottom: 20px; color: #64748b;">Admin Access Required</p>
+            <div class="form-group">
+                <input type="password" id="adminPassInput" placeholder="Enter Admin Password" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+            <button class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="checkAdminLogin()">Login to Dashboard</button>
+            <p id="loginError" style="color: #ef4444; font-size: 12px; margin-top: 15px; display: none; font-weight: bold;">Incorrect Password!</p>
         </div>
-        <button class="btn-primary" style="width: 100%;" onclick="checkAdminLogin()">Login to Dashboard</button>
-        <p id="loginError" style="color: var(--danger); font-size: 12px; margin-top: 10px; display: none;">Incorrect Password!</p>
     </div>
-</div>
+
     <script src="script.js"></script>
 </body>
 </html>
-
-
-
-

@@ -1,8 +1,7 @@
-// --- 1. UPDATED FIREBASE CONFIGURATION ---
+// --- 1. CONFIGURATION & GLOBALS ---
 const firebaseConfig = {
     apiKey: "AIzaSyDXv14dGQgPln72g_kMFHMOAoEYnxkTrOM",
     authDomain: "armaninstitute-d3e37.firebaseapp.com",
-    // FIX: Added the 'asia-southeast1' region to your URL
     databaseURL: "https://armaninstitute-d3e37-default-rtdb.asia-southeast1.firebasedatabase.app", 
     projectId: "armaninstitute-d3e37",
     storageBucket: "armaninstitute-d3e37.firebasestorage.app",
@@ -11,25 +10,34 @@ const firebaseConfig = {
     measurementId: "G-B7RV2E5PDG"
 };
 
+// Admin Password
+const ADMIN_PASSWORD = "admin"; // Change this to your preferred password
+
+// Global State
+let students = [];
+let transactions = [];
+let expenses = [];
+let attendanceRegistry = {};
+let currentViewStudentId = null;
+let currentCalDate = new Date();
+let currentBase64Image = "";
+
 // Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.database();
 
-// --- 2. SECURE AUTO-LOGIN (Wait for library to load) ---
+// --- 2. AUTHENTICATION & SYNC ---
 const initializeAuth = () => {
-    // Check if auth is available yet
     if (typeof firebase.auth !== 'function') {
-        console.log("Waiting for Firebase Auth library...");
-        setTimeout(initializeAuth, 100); // Check again in 100ms
+        setTimeout(initializeAuth, 100);
         return;
     }
 
     firebase.auth().signInAnonymously()
         .then(() => {
             console.log("Secure Connection Established to Arman Institute Database");
-            // Only start the data sync AFTER we are logged in
             startDataSync();
         })
         .catch((error) => {
@@ -37,7 +45,6 @@ const initializeAuth = () => {
         });
 };
 
-// --- 3. UPDATED LIVE DATA SYNC ---
 function startDataSync() {
     db.ref('/').on('value', (snapshot) => {
         const data = snapshot.val();
@@ -47,53 +54,14 @@ function startDataSync() {
             expenses = data.expenses || [];
             attendanceRegistry = data.attendanceRegistry || {};
             initSystem(); 
-        }
-        handleRouteLogic();
-    });
-}
-
-window.onload = () => {
-    initializeAuth(); 
-    const dateInput = document.getElementById('attendanceDate');
-    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
-};
-
-    // Listen for Real-time Cloud Updates
-    db.ref('/').on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            students = data.students || [];
-            transactions = data.transactions || [];
-            expenses = data.expenses || [];
-            attendanceRegistry = data.attendanceRegistry || {};
-            initSystem(); // This fills your tables with the data
         } else {
             console.warn("Database is currently empty.");
         }
         handleRouteLogic();
     });
-};
-
-function handleRouteLogic() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const verifyId = urlParams.get('verify');
-
-    if (verifyId) {
-        // PUBLIC QR VIEW: No login needed, hide sidebar
-        document.getElementById('loginModal').style.display = 'none';
-        document.querySelector('.sidebar').style.display = 'none';
-        showSection('verify-student', null);
-        document.getElementById('verifyInput').value = verifyId;
-        verifyStudent();
-    } else {
-        // ADMIN DASHBOARD: Check if logged in
-        if (sessionStorage.getItem('isAdmin') === 'true') {
-            document.getElementById('loginModal').style.display = 'none';
-        } else {
-            document.getElementById('loginModal').style.display = 'flex';
-        }
-    }
 }
+
+// --- 3. CORE LOGIC ---
 function initSystem() {
     updateAcademicStats();
     updateCourseDropdown();
@@ -104,8 +72,29 @@ function initSystem() {
     renderTransactions();
 }
 
+function handleRouteLogic() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const verifyId = urlParams.get('verify');
+
+    if (verifyId) {
+        document.getElementById('loginModal').style.display = 'none';
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar) sidebar.style.display = 'none';
+        
+        showSection('verify-student', null);
+        document.getElementById('verifyInput').value = verifyId;
+        verifyStudent();
+    } else {
+        if (sessionStorage.getItem('isAdmin') === 'true') {
+            document.getElementById('loginModal').style.display = 'none';
+        } else {
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+    }
+}
+
 function saveData() {
-    db.ref('/').set({
+    return db.ref('/').set({
         students,
         transactions,
         expenses,
@@ -115,38 +104,34 @@ function saveData() {
     });
 }
 
-// --- NAVIGATION ---
+// --- 4. NAVIGATION ---
 function showSection(id, btn) {
     document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    btn.classList.add('active');
+    
+    const section = document.getElementById(id);
+    if (section) section.classList.add('active');
+    if (btn) btn.classList.add('active');
 
-    // Trigger specific renders
     if(id === 'enrolment') renderEnrolmentTable();
     if(id === 'attendance') renderAttendance();
 }
 
-// --- STUDENT ENROLMENT & FILTERING ---
+// --- 5. STUDENT MANAGEMENT ---
 function filterStudents() {
     const searchQuery = document.getElementById('studentSearch').value.toLowerCase();
     const courseQuery = document.getElementById('courseFilter').value;
-    const statusQuery = document.getElementById('statusFilter').value; // Get Status Value
+    const statusQuery = document.getElementById('statusFilter').value;
 
     const filtered = students.filter(s => {
         const matchesSearch = s.name.toLowerCase().includes(searchQuery) || s.id.includes(searchQuery);
         const matchesCourse = (courseQuery === "All" || s.course === courseQuery);
-        
-        // Match status (default to 'Active' if status is missing in record)
         const currentStatus = s.status || "Active";
         const matchesStatus = (statusQuery === "All" || currentStatus === statusQuery);
-        
         return matchesSearch && matchesCourse && matchesStatus;
     });
 
-    // Update the tables with the triple-filtered list
     renderEnrolmentTable(filtered);
-    renderAttendance(filtered);
 }
 
 function renderEnrolmentTable(dataToRender = students) {
@@ -154,11 +139,10 @@ function renderEnrolmentTable(dataToRender = students) {
     if (!list) return;
 
     list.innerHTML = dataToRender.map(s => {
-        // Define colors for different statuses
-        let statusColor = "#64748b"; // Default Grey
-        if (s.status === "Active") statusColor = "#22c55e";    // Green
-        if (s.status === "Completed") statusColor = "#3b82f6"; // Blue
-        if (s.status === "Dropped") statusColor = "#ef4444";   // Red
+        let statusColor = "#64748b";
+        if (s.status === "Active") statusColor = "#22c55e";
+        if (s.status === "Completed") statusColor = "#3b82f6";
+        if (s.status === "Dropped") statusColor = "#ef4444";
 
         return `
         <tr>
@@ -171,19 +155,17 @@ function renderEnrolmentTable(dataToRender = students) {
                     ${s.status || 'Active'}
                 </span>
             </td>
-            <td>
-                <button class="btn-primary" style="background:#059669; padding:5px 8px; font-size:11px;" onclick="printIdCard('${s.id}')">Print ID</button>
-            </td>
-            <td>
-                <button class="btn-edit" onclick="openUpdateModal('${s.id}')">Edit</button>
-            </td>
+            <td><button class="btn-primary" style="background:#059669; padding:5px 8px; font-size:11px;" onclick="printIdCard('${s.id}')">Print ID</button></td>
+            <td><button class="btn-edit" onclick="openUpdateModal('${s.id}')">Edit</button></td>
         </tr>`;
     }).join('');
 }
 
-// --- ATTENDANCE SYSTEM ---
+// --- 6. ATTENDANCE ---
 function renderAttendance(dataToRender = students) {
-    const selectedDate = document.getElementById('attendanceDate').value;
+    const dateInput = document.getElementById('attendanceDate');
+    if (!dateInput) return;
+    const selectedDate = dateInput.value;
     const list = document.getElementById('attendanceList');
     if (!list) return;
     const dayRecord = attendanceRegistry[selectedDate] || {};
@@ -192,27 +174,15 @@ function renderAttendance(dataToRender = students) {
         const currentStatus = dayRecord[s.id] || "Absent";
         const color = currentStatus === "Present" ? "#22c55e" : (currentStatus === "Holiday" ? "#3b82f6" : "#ef4444");
 
-        // Duration Alert Logic
-        const joinDate = new Date(s.joiningDate);
-        const durationMonths = parseInt(s.duration) || 0;
-        let progressHTML = "";
-        if (durationMonths > 0) {
-            const endDate = new Date(joinDate);
-            endDate.setMonth(endDate.getMonth() + durationMonths);
-            const daysLeft = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
-            const warnColor = daysLeft < 7 ? "#ef4444" : "#64748b";
-            progressHTML = `<br><small style="color:${warnColor}">Ends in: ${daysLeft > 0 ? daysLeft + ' days' : 'Expired'}</small>`;
-        }
-
         return `
         <tr>
             <td>#${s.id}</td>
-            <td><strong>${s.name}</strong>${progressHTML}</td>
+            <td><strong>${s.name}</strong></td>
             <td>${s.course}</td>
             <td><span style="color: ${color}; font-weight:bold;">${currentStatus}</span></td>
             <td>
-                <button class="btn-present" style="background:#dcfce7; color:#166534; padding:5px 10px;" onclick="setAtt('${selectedDate}', '${s.id}', 'Present')">P</button>
-                <button class="btn-absent" style="background:#fee2e2; color:#991b1b; padding:5px 10px;" onclick="setAtt('${selectedDate}', '${s.id}', 'Absent')">A</button>
+                <button class="btn-present" style="background:#dcfce7; color:#166534; padding:5px 10px; border:none; cursor:pointer;" onclick="setAtt('${selectedDate}', '${s.id}', 'Present')">P</button>
+                <button class="btn-absent" style="background:#fee2e2; color:#991b1b; padding:5px 10px; border:none; cursor:pointer;" onclick="setAtt('${selectedDate}', '${s.id}', 'Absent')">A</button>
             </td>
         </tr>`;
     }).join('');
@@ -221,8 +191,7 @@ function renderAttendance(dataToRender = students) {
 function setAtt(date, id, status) {
     if (!attendanceRegistry[date]) attendanceRegistry[date] = {};
     attendanceRegistry[date][id] = status;
-    saveData();
-    renderAttendance();
+    saveData().then(() => renderAttendance());
 }
 
 function markAsHoliday() {
@@ -230,24 +199,27 @@ function markAsHoliday() {
     if (confirm(`Mark all as Holiday for ${date}?`)) {
         if (!attendanceRegistry[date]) attendanceRegistry[date] = {};
         students.forEach(s => attendanceRegistry[date][s.id] = "Holiday");
-        saveData(); renderAttendance();
+        saveData().then(() => renderAttendance());
     }
 }
 
-// --- FINANCE SYSTEM ---
+// --- 7. FINANCE & EXPENSES ---
 function generateInvoice() {
     const id = document.getElementById('feeStudentId').value;
     const amt = document.getElementById('feeAmount').value;
-    if(!id || !amt) return alert("Missing Info");
+    if(!id || !amt) return alert("Please select a student and enter an amount.");
     
+    const student = students.find(s => s.id === id);
     transactions.unshift({
         studentId: id,
-        name: students.find(s => s.id === id).name,
+        name: student ? student.name : "Unknown",
         amount: amt,
         date: new Date().toLocaleDateString('en-IN')
     });
-    saveData(); initSystem();
-    document.getElementById('feeAmount').value = "";
+    saveData().then(() => {
+        document.getElementById('feeAmount').value = "";
+        initSystem();
+    });
 }
 
 function addExpense() {
@@ -256,8 +228,10 @@ function addExpense() {
     if(!amt) return;
 
     expenses.unshift({ category: cat, amount: amt, date: new Date().toLocaleDateString('en-IN') });
-    saveData(); initSystem();
-    document.getElementById('expAmount').value = "";
+    saveData().then(() => {
+        document.getElementById('expAmount').value = "";
+        initSystem();
+    });
 }
 
 function updateFinancialSummary() {
@@ -272,10 +246,8 @@ function renderTransactions() {
     const list = document.getElementById('transactionList');
     if (!list) return;
 
-    // Create labeled logs so we know where they came from
     const incomeLogs = transactions.map((t, idx) => ({ ...t, type: 'Income', originalIndex: idx }));
     const expenseLogs = expenses.map((e, idx) => ({ ...e, type: 'Expense', name: e.category, originalIndex: idx }));
-
     const allLogs = [...incomeLogs, ...expenseLogs];
 
     list.innerHTML = allLogs.map(item => `
@@ -288,110 +260,153 @@ function renderTransactions() {
                 <b style="color: ${item.type === 'Income' ? '#22c55e' : '#ef4444'}; margin-right: 10px;">
                     ${item.type === 'Income' ? '+' : '-'}₹${item.amount}
                 </b>
-                <button onclick="editTransaction(${item.originalIndex}, '${item.type}')" 
-                    style="background: #dbeafe; color: #2563eb; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px;">
-                    Edit
-                </button>
-                <button onclick="deleteTransaction(${item.originalIndex}, '${item.type}')" 
-                    style="background: #fee2e2; color: #ef4444; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px;">
-                    Delete
-                </button>
+                <button onclick="editTransaction(${item.originalIndex}, '${item.type}')" class="btn-edit" style="font-size:11px; padding:5px;">Edit</button>
+                <button onclick="deleteTransaction(${item.originalIndex}, '${item.type}')" class="btn-reset" style="font-size:11px; padding:5px; background:#fee2e2; color:#ef4444; border:none;">Del</button>
             </div>
-        </li>
-    `).join('');
+        </li>`).join('');
 }
 
 function showMonthlyRevenue() {
     const map = {};
     transactions.forEach(t => {
-        const m = t.date.split('/')[1] + '/' + t.date.split('/')[2];
+        const parts = t.date.split('/');
+        const m = parts[1] + '/' + parts[2];
         map[m] = (map[m] || 0) + Number(t.amount);
     });
-    document.getElementById('monthlyReportContainer').innerHTML = Object.entries(map).map(([m, v]) => `<p>${m}: <b>₹${v}</b></p>`).join('');
+    const container = document.getElementById('monthlyReportContainer');
+    container.style.display = 'block';
+    container.innerHTML = '<h4>Monthly Analysis</h4>' + Object.entries(map).map(([m, v]) => `<p>${m}: <b>₹${v}</b></p>`).join('');
 }
 
-// --- ID CARD PRINTING ---
-
-    // --- UPDATED ID CARD PRINTING ---
-// --- UPDATED ID CARD PRINTING WITH QR CODE ---
+// --- 8. ID CARD & QR ---
 function printIdCard(id) {
     const s = students.find(stu => stu.id === id);
     if (!s) return;
 
-    // Replace 'YOUR_GITHUB_URL' with your actual GitHub Pages link
-    // Example: https://armaninstitute.github.io/manager/
     const baseUrl = window.location.href.split('?')[0]; 
     const qrData = `${baseUrl}?verify=${s.id}`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
-    // Open a clean print window
-    const printWin = window.open('', '_blank');
     
-    // Construct the professional HTML structure
-    const cardHtml = `
-        <div>
-            <div class="id-header-banner">
-                <h2>Arman Institute</h2>
-                <p class="id-sub-text">VOCATIONAL & LANGUAGE TRAINING CENTRE</p>
-            </div>
-            
-            <div class="id-body">
-                <div id="printPhotoContainer">
-                    ${s.photo ? `<img src="${s.photo}">` : '<span style="font-size:40px;">👤</span>'}
-                </div>
-                
-                <div class="id-info">
-                    <div class="info-row">
-                        <span class="info-label">Student Name</span>
-                        <span class="info-value">${s.name.toUpperCase()}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Course Enrolled</span>
-                        <span class="info-value">${s.course}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Date of Joining</span>
-                        <span class="info-value">${s.joiningDate}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="id-qr-box">
-                <img src="${qrUrl}" alt="QR Code">
-                <span>SCAN TO VERIFY</span>
-            </div>
-            
-            <div class="id-footer-tag">ID: ${s.id}</div>
-        </div>
-    `;
-
+    const printWin = window.open('', '_blank');
     printWin.document.write(`
         <html>
         <head>
             <title>ID Card - ${s.name}</title>
-            <link rel="stylesheet" href="style.css">
             <style>
-                body { background: white; display: flex; justify-content: center; padding-top: 50px; }
+                .card { width: 350px; border: 2px solid #2563eb; border-radius: 15px; padding: 20px; font-family: sans-serif; text-align: center; }
+                .photo { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
+                .qr { width: 100px; margin-top: 10px; }
+                h2 { color: #2563eb; margin: 5px 0; }
             </style>
         </head>
-        <body onload="setTimeout(function(){ window.print(); window.close(); }, 500)">
-            <div id="printIdCardArea" style="display:block !important;">
-                ${cardHtml}
+        <body onload="window.print(); window.close();">
+            <div class="card">
+                <h2>Arman Institute</h2>
+                ${s.photo ? `<img src="${s.photo}" class="photo">` : '👤'}
+                <h3>${s.name.toUpperCase()}</h3>
+                <p>Course: ${s.course}<br>ID: #${s.id}</p>
+                <img src="${qrUrl}" class="qr"><br>
+                <small>SCAN TO VERIFY</small>
             </div>
         </body>
         </html>
     `);
-    
     printWin.document.close();
 }
-// --- PROFILE & CALENDAR ---
+
+// --- 9. MODALS & FORMS ---
+function previewImage(input) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        currentBase64Image = e.target.result;
+        const preview = document.getElementById('modalPhotoPreview');
+        preview.src = currentBase64Image;
+        preview.style.display = "block";
+    };
+    if (file) reader.readAsDataURL(file);
+}
+
+function handleStudentSubmit() {
+    const id = document.getElementById('editStudentId').value;
+    const data = {
+        name: document.getElementById('newStuName').value,
+        course: document.getElementById('newStuCourse').value,
+        duration: document.getElementById('newStuDuration').value,
+        mobile: document.getElementById('newStuMobile').value,
+        joiningDate: document.getElementById('newStuJoinDate').value,
+        status: document.getElementById('newStuStatus').value,
+        photo: currentBase64Image || (id ? students.find(s => s.id === id).photo : "")
+    };
+
+    if(id) {
+        const idx = students.findIndex(s => s.id === id);
+        students[idx] = { ...students[idx], ...data };
+    } else {
+        students.push({ id: Date.now().toString().slice(-4), ...data });
+    }
+    
+    saveData().then(() => {
+        closeModal('studentModal');
+        initSystem();
+    });
+}
+
+function openAddModal() {
+    document.getElementById('editStudentId').value = "";
+    document.getElementById('newStuName').value = "";
+    document.getElementById('newStuCourse').value = "";
+    document.getElementById('newStuDuration').value = "";
+    document.getElementById('newStuMobile').value = "";
+    document.getElementById('newStuJoinDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('modalPhotoPreview').style.display = "none";
+    currentBase64Image = "";
+    openModal('studentModal');
+}
+
+function openUpdateModal(id) {
+    const s = students.find(st => st.id === id);
+    document.getElementById('editStudentId').value = s.id;
+    document.getElementById('newStuName').value = s.name;
+    document.getElementById('newStuCourse').value = s.course;
+    document.getElementById('newStuDuration').value = s.duration || "";
+    document.getElementById('newStuMobile').value = s.mobile;
+    document.getElementById('newStuJoinDate').value = s.joiningDate;
+    document.getElementById('newStuStatus').value = s.status;
+    if(s.photo) {
+        const preview = document.getElementById('modalPhotoPreview');
+        preview.src = s.photo;
+        preview.style.display = "block";
+        currentBase64Image = s.photo;
+    }
+    openModal('studentModal');
+}
+
+// --- 10. UTILS & SYSTEM ---
+function updateAcademicStats() {
+    document.getElementById('totalStudentCount').innerText = students.length;
+    document.getElementById('activeStudentCount').innerText = students.filter(s => s.status === 'Active').length;
+}
+
+function updateCourseDropdown() {
+    const courses = [...new Set(students.map(s => s.course))];
+    document.getElementById('courseFilter').innerHTML = '<option value="All">All Courses</option>' + 
+        courses.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function refreshStudentDropdown() {
+    const dropdown = document.getElementById('feeStudentId');
+    if (!dropdown) return;
+    dropdown.innerHTML = '<option value="">-- Choose Student --</option>' + 
+        students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+}
+
 function viewProfile(id) {
     currentViewStudentId = id;
     const s = students.find(st => st.id === id);
-    
-    // Set Photo (Use default if none exists)
-    const photoImg = document.getElementById('profPhotoImg');
-    photoImg.src = s.photo || "https://via.placeholder.com/80?text=Student";
+    if(!s) return;
 
+    document.getElementById('profPhotoImg').src = s.photo || "https://via.placeholder.com/80?text=Student";
     document.getElementById('profName').innerText = s.name;
     document.getElementById('profID').innerText = `#${s.id}`;
     document.getElementById('profCourse').innerText = s.course;
@@ -407,6 +422,7 @@ function viewProfile(id) {
 
 function renderCalendar() {
     const grid = document.getElementById('attendanceCalendar');
+    if(!grid) return;
     grid.innerHTML = "";
     const year = currentCalDate.getFullYear();
     const month = currentCalDate.getMonth();
@@ -429,143 +445,16 @@ function changeMonth(dir) {
     renderCalendar();
 }
 
-// --- MODALS & UTILS ---
-function handleStudentSubmit() {
-    const id = document.getElementById('editStudentId').value;
-    const data = {
-        name: document.getElementById('newStuName').value,
-        course: document.getElementById('newStuCourse').value,
-        duration: document.getElementById('newStuDuration').value,
-        mobile: document.getElementById('newStuMobile').value,
-        joiningDate: document.getElementById('newStuJoinDate').value,
-        status: document.getElementById('newStuStatus').value,
-        photo: currentBase64Image // SAVE THE PHOTO HERE
-    }; 
-    if(id) {
-        const idx = students.findIndex(s => s.id === id);
-        students[idx] = {...students[idx], ...data};
+function checkAdminLogin() {
+    const input = document.getElementById('adminPassInput').value;
+    if (input === ADMIN_PASSWORD) {
+        document.getElementById('loginModal').style.display = 'none';
+        sessionStorage.setItem('isAdmin', 'true');
     } else {
-        students.push({ id: Date.now().toString().slice(-4), ...data });
-    }
-    saveData(); 
-    initSystem(); 
-    closeModal('studentModal');
-    currentBase64Image = ""; // Reset for next time
-    document.getElementById('modalPhotoPreview').style.display = "none";
-}
-
-function openAddModal() {
-    document.getElementById('editStudentId').value = "";
-    document.getElementById('newStuPhoto').value = "";
-    document.getElementById('modalPhotoPreview').style.display = "none";
-    currentBase64Image = ""; 
-    // ... rest of your existing openAddModal logic ...
-
-    document.getElementById('newStuJoinDate').value = new Date().toISOString().split('T')[0];
-    openModal('studentModal');
-}
-
-function openUpdateModal(id) {
-    const s = students.find(st => st.id === id);
-    document.getElementById('editStudentId').value = s.id;
-    document.getElementById('newStuName').value = s.name;
-    document.getElementById('newStuCourse').value = s.course;
-    document.getElementById('newStuDuration').value = s.duration || "";
-    document.getElementById('newStuJoinDate').value = s.joiningDate;
-    document.getElementById('newStuStatus').value = s.status;
-    openModal('studentModal');
-}
-
-function updateAcademicStats() {
-    document.getElementById('totalStudentCount').innerText = students.length;
-    document.getElementById('activeStudentCount').innerText = students.filter(s => s.status === 'Active').length;
-}
-
-function updateCourseDropdown() {
-    const courses = [...new Set(students.map(s => s.course))];
-    document.getElementById('courseFilter').innerHTML = '<option value="All">All Courses</option>' + 
-        courses.map(c => `<option value="${c}">${c}</option>`).join('');
-}
-
-function refreshStudentDropdown() {
-    document.getElementById('feeStudentId').innerHTML = '<option value="">-- Choose Student --</option>' + 
-        students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-}
-
-function exportBackup() {
-    const blob = new Blob([JSON.stringify({ students, transactions, expenses, attendanceRegistry })], { type: 'application/json' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `Arman_Institute_Backup.json`; a.click();
-}
-
-function importBackup(e) {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-        const data = JSON.parse(ev.target.result);
-        students = data.students; transactions = data.transactions; 
-        expenses = data.expenses || []; attendanceRegistry = data.attendanceRegistry;
-        saveData(); location.reload();
-    };
-    reader.readAsText(e.target.files[0]);
-}
-
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function resetSystem() { if(confirm("Clear All?")) { localStorage.clear(); location.reload(); } }
-// --- DELETE TRANSACTION ---
-function deleteTransaction(index, type) {
-    if (confirm(`Delete this ${type} record permanently?`)) {
-        if (type === 'Income') {
-            transactions.splice(index, 1);
-        } else {
-            expenses.splice(index, 1);
-        }
-        saveData();
-        updateFinancialSummary();
-        renderTransactions();
+        document.getElementById('loginError').style.display = 'block';
     }
 }
 
-// --- EDIT TRANSACTION ---
-function editTransaction(index, type) {
-    if (type === 'Income') {
-        const t = transactions[index];
-        // 1. Switch to Fee Collection Section
-        showSection('fee-collection', document.querySelector('[onclick*="fee-collection"]'));
-        // 2. Fill the form
-        document.getElementById('feeStudentId').value = t.studentId;
-        document.getElementById('feeAmount').value = t.amount;
-        // 3. Remove the old record so the "Save" acts as an update
-        transactions.splice(index, 1);
-        alert("Transaction loaded into 'Fee Collection'. Edit the amount and click 'Generate & Save' to update.");
-    } else {
-        const e = expenses[index];
-        // 1. Switch to Expenses Section
-        showSection('expenses', document.querySelector('[onclick*="expenses"]'));
-        // 2. Fill the form
-        document.getElementById('expCategory').value = e.category;
-        document.getElementById('expAmount').value = e.amount;
-        // 3. Remove old record
-        expenses.splice(index, 1);
-        alert("Expense loaded into 'Record Expense'. Edit and click 'Save' to update.");
-    }
-    saveData();
-    updateFinancialSummary();
-    renderTransactions();
-}
-let currentBase64Image = "";
-
-function previewImage(input) {
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        currentBase64Image = e.target.result;
-        const preview = document.getElementById('modalPhotoPreview');
-        preview.src = currentBase64Image;
-        preview.style.display = "block";
-    };
-    if (file) reader.readAsDataURL(file);
-}
 function verifyStudent() {
     const id = document.getElementById('verifyInput').value.trim();
     const s = students.find(stu => stu.id === id);
@@ -577,128 +466,76 @@ function verifyStudent() {
         return;
     }
 
-    // 1. Calculate Attendance Percentage
-    let totalDays = 0;
-    let presentDays = 0;
+    let totalDays = 0, presentDays = 0;
     Object.values(attendanceRegistry).forEach(day => {
-        if (day[id]) {
-            totalDays++;
-            if (day[id] === "Present") presentDays++;
-        }
+        if (day[id]) { totalDays++; if (day[id] === "Present") presentDays++; }
     });
     const attPercentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
+    const totalPaid = transactions.filter(t => t.studentId === id).reduce((sum, t) => sum + Number(t.amount), 0);
 
-    // 2. Calculate Total Fees Paid
-    const studentPayments = transactions.filter(t => t.studentId === id);
-    const totalPaid = studentPayments.reduce((sum, t) => sum + Number(t.amount), 0);
-
-    // 3. Get Last 5 Transactions
-    const lastFive = studentPayments.slice(0, 5);
-    const transactionHTML = lastFive.length > 0 
-        ? lastFive.map(t => `
-            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f1f5f9; font-size:0.85rem;">
-                <span style="color:var(--text-muted);">${t.date}</span>
-                <span style="font-weight:600; color:var(--success);">+₹${t.amount}</span>
-            </div>
-        `).join('')
-        : `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">No payment records found.</p>`;
-
-    // 4. Update the UI
     resultDiv.style.display = "block";
     resultDiv.innerHTML = `
-        <div class="card" style="border-left: 5px solid var(--primary);">
-            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 20px;">
-                <img src="${s.photo || 'https://via.placeholder.com/80'}" style="width:100px; height:100px; border-radius:12px; object-fit:cover; border:2px solid #eee;">
-                <div>
-                    <h2 style="margin:0;">${s.name.toUpperCase()}</h2>
-                    <p style="color:var(--text-muted); margin:5px 0;">Course: <b>${s.course}</b> | Status: <b>${s.status || 'Active'}</b></p>
-                </div>
-            </div>
-            
-            <div class="stats-row-grid">
-                <div class="stat-box" style="border-bottom-color: var(--success);">
-                    <p style="color:var(--text-muted); font-size:10px; margin:0; font-weight:bold;">ATTENDANCE</p>
-                    <h2 style="margin:5px 0;">${attPercentage}%</h2>
-                    <small>${presentDays} days present</small>
-                </div>
-                <div class="stat-box" style="border-bottom-color: var(--primary);">
-                    <p style="color:var(--text-muted); font-size:10px; margin:0; font-weight:bold;">TOTAL PAID</p>
-                    <h2 style="margin:5px 0;">₹${totalPaid}</h2>
-                    <small>Full History</small>
-                </div>
-            </div>
-
-            <div style="margin-top:25px; background:#f8fafc; padding:15px; border-radius:12px;">
-                <h4 style="margin:0 0 10px 0; font-size:0.9rem; color:var(--text-main); border-bottom:2px solid #e2e8f0; padding-bottom:5px;">
-                    Last 5 Fee Installments
-                </h4>
-                ${transactionHTML}
-            </div>
-        </div>
-    `;
+        <div style="padding:20px; text-align:center;">
+            <img src="${s.photo || ''}" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">
+            <h2>${s.name.toUpperCase()}</h2>
+            <p>Course: ${s.course} | Status: ${s.status || 'Active'}</p>
+            <hr>
+            <p>Attendance: <b>${attPercentage}%</b></p>
+            <p>Fees Paid: <b>₹${totalPaid}</b></p>
+        </div>`;
 }
 
+function deleteTransaction(index, type) {
+    if (confirm(`Delete this ${type} record?`)) {
+        if (type === 'Income') transactions.splice(index, 1);
+        else expenses.splice(index, 1);
+        saveData().then(() => initSystem());
+    }
+}
 
-function checkAdminLogin() {
-    const input = document.getElementById('adminPassInput').value;
-    const errorMsg = document.getElementById('loginError');
-    const loginModal = document.getElementById('loginModal');
-
-    if (input === ADMIN_PASSWORD) {
-        loginModal.style.display = 'none';
-        sessionStorage.setItem('isAdmin', 'true'); // Keeps you logged in for this session
+function editTransaction(index, type) {
+    if (type === 'Income') {
+        const t = transactions[index];
+        showSection('fee-collection', null);
+        document.getElementById('feeStudentId').value = t.studentId;
+        document.getElementById('feeAmount').value = t.amount;
+        transactions.splice(index, 1);
     } else {
-        errorMsg.style.display = 'block';
+        const e = expenses[index];
+        showSection('expenses', null);
+        document.getElementById('expCategory').value = e.category;
+        document.getElementById('expAmount').value = e.amount;
+        expenses.splice(index, 1);
     }
+    saveData().then(() => initSystem());
 }
 
-// Update your window.onload to allow QR scans WITHOUT logging in
-const originalOnload = window.onload;
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function resetSystem() { if(confirm("Clear All Cloud Data?")) { db.ref('/').set({}).then(() => location.reload()); } }
+
+function exportBackup() {
+    const blob = new Blob([JSON.stringify({ students, transactions, expenses, attendanceRegistry })], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `Arman_Institute_Backup.json`; a.click();
+}
+
+function importBackup(e) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        const data = JSON.parse(ev.target.result);
+        students = data.students || [];
+        transactions = data.transactions || [];
+        expenses = data.expenses || [];
+        attendanceRegistry = data.attendanceRegistry || {};
+        saveData().then(() => location.reload());
+    };
+    reader.readAsText(e.target.files[0]);
+}
+
+// --- 11. INITIALIZATION ---
 window.onload = () => {
-    if (originalOnload) originalOnload();
-
-    // Check if we are already logged in
-    if (sessionStorage.getItem('isAdmin') === 'true') {
-        document.getElementById('loginModal').style.display = 'none';
-    }
-
-    // IMPORTANT: If a QR code is scanned, hide the login modal 
-    // but ONLY show the verify section (Dashboard remains locked)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('verify')) {
-        document.getElementById('loginModal').style.display = 'none';
-        // Hide the sidebar so they can't click other sections
-        document.querySelector('.sidebar').style.display = 'none';
-        // Ensure only verify section shows
-        showSection('verify-student', null); 
-    }
+    initializeAuth();
+    const dateInput = document.getElementById('attendanceDate');
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 };
-function migrateLocalToCloud() {
-    if(!confirm("Push all existing records from this laptop to the Cloud?")) return;
-
-    const oldStudents = JSON.parse(localStorage.getItem('stuData')) || [];
-    const oldTrans = JSON.parse(localStorage.getItem('transData')) || [];
-    const oldExp = JSON.parse(localStorage.getItem('expData')) || [];
-    const oldAtt = JSON.parse(localStorage.getItem('attendanceRegistry')) || {};
-
-    db.ref('/').set({
-        students: oldStudents,
-        transactions: oldTrans,
-        expenses: oldExp,
-        attendanceRegistry: oldAtt
-    }).then(() => {
-        alert("Migration Successful! All data is now live.");
-    });
-}
-// --- SECURE AUTO-LOGIN ---
-firebase.auth().signInAnonymously()
-    .then(() => {
-        console.log("Secure Connection Established");
-    })
-    .catch((error) => {
-        console.error("Connection Error: ", error.message);
-    });
-
-
-
-

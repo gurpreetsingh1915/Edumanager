@@ -607,7 +607,7 @@ function verifyStudent() {
         </div>
     `;
 }
-const ADMIN_PASSWORD = "Guru@1915"; // 👈 Set your private password here
+
 
 function checkAdminLogin() {
     const input = document.getElementById('adminPassInput').value;
@@ -668,4 +668,5 @@ firebase.auth().signInAnonymously()
     .catch((error) => {
         console.error("Connection Error: ", error.message);
     });
+
 

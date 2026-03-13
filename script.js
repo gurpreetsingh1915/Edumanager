@@ -568,3 +568,40 @@ function verifyStudent() {
         </div>
     `;
 }
+const ADMIN_PASSWORD = "Guru@1915"; // 👈 Set your private password here
+
+function checkAdminLogin() {
+    const input = document.getElementById('adminPassInput').value;
+    const errorMsg = document.getElementById('loginError');
+    const loginModal = document.getElementById('loginModal');
+
+    if (input === ADMIN_PASSWORD) {
+        loginModal.style.display = 'none';
+        sessionStorage.setItem('isAdmin', 'true'); // Keeps you logged in for this session
+    } else {
+        errorMsg.style.display = 'block';
+    }
+}
+
+// Update your window.onload to allow QR scans WITHOUT logging in
+const originalOnload = window.onload;
+window.onload = () => {
+    if (originalOnload) originalOnload();
+
+    // Check if we are already logged in
+    if (sessionStorage.getItem('isAdmin') === 'true') {
+        document.getElementById('loginModal').style.display = 'none';
+    }
+
+    // IMPORTANT: If a QR code is scanned, hide the login modal 
+    // but ONLY show the verify section (Dashboard remains locked)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('verify')) {
+        document.getElementById('loginModal').style.display = 'none';
+        // Hide the sidebar so they can't click other sections
+        document.querySelector('.sidebar').style.display = 'none';
+        // Ensure only verify section shows
+        showSection('verify-student', null); 
+    }
+};
+

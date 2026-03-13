@@ -1,8 +1,9 @@
-// --- FIREBASE CONFIGURATION ---
+// --- 1. UPDATED FIREBASE CONFIGURATION ---
 const firebaseConfig = {
     apiKey: "AIzaSyDXv14dGQgPln72g_kMFHMOAoEYnxkTrOM",
     authDomain: "armaninstitute-d3e37.firebaseapp.com",
-    databaseURL: "https://armaninstitute-d3e37-default-rtdb.firebaseio.com", 
+    // FIX: Added the 'asia-southeast1' region to your URL
+    databaseURL: "https://armaninstitute-d3e37-default-rtdb.asia-southeast1.firebasedatabase.app", 
     projectId: "armaninstitute-d3e37",
     storageBucket: "armaninstitute-d3e37.firebasestorage.app",
     messagingSenderId: "921004735664",
@@ -11,24 +12,31 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.database();
 
-// --- DATA VARIABLES ---
-let students = [];
-let transactions = [];
-let expenses = [];
-let attendanceRegistry = {};
+// --- 2. SECURE AUTO-LOGIN (Wait for library to load) ---
+// This fixed the "auth is not a function" error from your screenshot
+const initializeAuth = () => {
+    firebase.auth().signInAnonymously()
+        .then(() => {
+            console.log("Secure Connection Established to Arman Institute Database");
+        })
+        .catch((error) => {
+            console.error("Connection Error: ", error.message);
+        });
+};
 
-let currentViewStudentId = null;
-let currentCalDate = new Date();
-
-// --- LIVE DATA SYNC ---
+// --- 3. UPDATED LIVE DATA SYNC ---
 window.onload = () => {
+    initializeAuth(); // Start security login
+    
     const dateInput = document.getElementById('attendanceDate');
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
-    // 1. Listen for Real-time Cloud Updates
+    // Listen for Real-time Cloud Updates
     db.ref('/').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
@@ -36,10 +44,10 @@ window.onload = () => {
             transactions = data.transactions || [];
             expenses = data.expenses || [];
             attendanceRegistry = data.attendanceRegistry || {};
-            initSystem(); // Refresh all tables with cloud data
+            initSystem(); // This fills your tables with the data
+        } else {
+            console.warn("Database is currently empty.");
         }
-
-        // 2. Handle Login & QR Verification Logic
         handleRouteLogic();
     });
 };
@@ -668,5 +676,6 @@ firebase.auth().signInAnonymously()
     .catch((error) => {
         console.error("Connection Error: ", error.message);
     });
+
 
 

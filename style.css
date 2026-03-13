@@ -133,3 +133,147 @@ td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
 .status-active { color: var(--success); font-weight: bold; background: #f0fdf4; padding: 4px 8px; border-radius: 4px; }
 .status-completed { color: var(--primary); font-weight: bold; background: #eff6ff; padding: 4px 8px; border-radius: 4px; }
 .status-dropped { color: var(--danger); font-weight: bold; background: #fef2f2; padding: 4px 8px; border-radius: 4px; }
+/* --- ENHANCED PROFESSIONAL ID CARD (PRINT & PREVIEW) --- */
+#printIdCardArea {
+    display: none; /* Hidden on app screen */
+}
+
+/* This targets the card container when it's rendered for printing */
+#printIdCardArea > div {
+    width: 350px !important;
+    height: 210px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    position: relative !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    font-family: 'Segoe UI', sans-serif !important;
+    border-left: 8px solid var(--primary) !important; /* Brand accent strip */
+    margin: 20px auto;
+}
+
+/* Header Section inside Card */
+#printIdCardArea .id-header-banner {
+    background: #f8fafc !important;
+    padding: 15px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    text-align: left !important;
+}
+
+#printIdCardArea h2 {
+    margin: 0 !important;
+    color: var(--primary) !important;
+    font-size: 1.1rem !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+}
+
+#printIdCardArea .id-sub-text {
+    font-size: 0.65rem !important;
+    color: var(--text-muted) !important;
+    margin: 2px 0 0 0 !important;
+    font-weight: 600 !important;
+}
+
+/* Photo and Data Layout */
+#printIdCardArea .id-body {
+    display: flex !important;
+    padding: 15px !important;
+    gap: 15px !important;
+    align-items: flex-start !important;
+}
+
+#printPhotoContainer {
+    width: 85px !important;
+    height: 85px !important;
+    border-radius: 12px !important;
+    border: 2px solid #f1f5f9 !important;
+    overflow: hidden !important;
+    background: #f8fafc !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#printPhotoContainer img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+/* Text Detail Styles */
+#printIdCardArea .id-info {
+    flex-grow: 1 !important;
+}
+
+#printIdCardArea .info-row {
+    margin-bottom: 5px !important;
+    font-size: 0.75rem !important;
+    border-bottom: 1px solid #f8fafc !important;
+    padding-bottom: 2px !important;
+}
+
+#printIdCardArea .info-label {
+    color: var(--text-muted) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 0.6rem !important;
+    display: block !important;
+}
+
+#printIdCardArea .info-value {
+    color: var(--text-main) !important;
+    font-weight: 600 !important;
+}
+
+/* Footer ID Number */
+#printIdCardArea .id-footer-tag {
+    position: absolute !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    background: var(--primary) !important;
+    color: white !important;
+    padding: 4px 12px !important;
+    border-top-left-radius: 12px !important;
+    font-size: 0.7rem !important;
+    font-weight: 800 !important;
+}
+
+/* Print Specific Overrides */
+@media print {
+    body * { visibility: hidden; }
+    #printIdCardArea, #printIdCardArea * { visibility: visible; }
+    #printIdCardArea { 
+        position: absolute; 
+        left: 0; 
+        top: 0; 
+        display: block !important;
+    }
+}
+/* --- QR CODE STYLING --- */
+#printIdCardArea .id-qr-box {
+    position: absolute !important;
+    top: 10px !important;
+    right: 15px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 2px !important;
+}
+
+#printIdCardArea .id-qr-box img {
+    width: 45px !important;
+    height: 45px !important;
+    border: 1px solid #f1f5f9 !important;
+    padding: 2px !important;
+    background: white !important;
+}
+
+#printIdCardArea .id-qr-box span {
+    font-size: 5px !important;
+    font-weight: 800 !important;
+    color: var(--text-muted) !important;
+    letter-spacing: 0.5px !important;
+}

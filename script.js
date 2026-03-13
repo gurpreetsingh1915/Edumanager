@@ -18,11 +18,19 @@ if (!firebase.apps.length) {
 const db = firebase.database();
 
 // --- 2. SECURE AUTO-LOGIN (Wait for library to load) ---
-// This fixed the "auth is not a function" error from your screenshot
 const initializeAuth = () => {
+    // Check if auth is available yet
+    if (typeof firebase.auth !== 'function') {
+        console.log("Waiting for Firebase Auth library...");
+        setTimeout(initializeAuth, 100); // Check again in 100ms
+        return;
+    }
+
     firebase.auth().signInAnonymously()
         .then(() => {
             console.log("Secure Connection Established to Arman Institute Database");
+            // Only start the data sync AFTER we are logged in
+            startDataSync();
         })
         .catch((error) => {
             console.error("Connection Error: ", error.message);
@@ -30,11 +38,25 @@ const initializeAuth = () => {
 };
 
 // --- 3. UPDATED LIVE DATA SYNC ---
+function startDataSync() {
+    db.ref('/').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            students = data.students || [];
+            transactions = data.transactions || [];
+            expenses = data.expenses || [];
+            attendanceRegistry = data.attendanceRegistry || {};
+            initSystem(); 
+        }
+        handleRouteLogic();
+    });
+}
+
 window.onload = () => {
-    initializeAuth(); // Start security login
-    
+    initializeAuth(); 
     const dateInput = document.getElementById('attendanceDate');
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+};
 
     // Listen for Real-time Cloud Updates
     db.ref('/').on('value', (snapshot) => {
@@ -676,6 +698,7 @@ firebase.auth().signInAnonymously()
     .catch((error) => {
         console.error("Connection Error: ", error.message);
     });
+
 
 
 

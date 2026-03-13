@@ -520,17 +520,56 @@ function exportBackup() {
     a.download = `Arman_Institute_Backup.json`; a.click();
 }
 
+// --- UPDATED IMPORT FUNCTION ---
 function importBackup(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (ev) => {
-        const data = JSON.parse(ev.target.result);
-        students = data.students || [];
-        transactions = data.transactions || [];
-        expenses = data.expenses || [];
-        attendanceRegistry = data.attendanceRegistry || {};
-        saveData().then(() => location.reload());
+        try {
+            const data = JSON.parse(ev.target.result);
+            
+            // Assign the recovered data to global variables
+            students = data.students || [];
+            transactions = data.transactions || [];
+            expenses = data.expenses || [];
+            attendanceRegistry = data.attendanceRegistry || {};
+
+            console.log("Data recovered locally. Syncing to Firebase...");
+
+            // CRITICAL: We wait for Firebase to confirm the save before reloading
+            saveData().then(() => {
+                alert("SUCCESS: All data moved to Cloud (Firebase). Your records are now permanent.");
+                location.reload(); 
+            }).catch(err => {
+                console.error("Firebase Sync Failed:", err);
+                alert("Error syncing to cloud. Please check your internet and Firebase rules.");
+            });
+        } catch (err) {
+            console.error("Parse Error:", err);
+            alert("Invalid backup file format.");
+        }
     };
-    reader.readAsText(e.target.files[0]);
+    reader.readAsText(file);
+}
+
+// --- IMPROVED DATA SYNC (Add this check) ---
+function startDataSync() {
+    db.ref('/').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && (data.students || data.transactions)) {
+            students = data.students || [];
+            transactions = data.transactions || [];
+            expenses = data.expenses || [];
+            attendanceRegistry = data.attendanceRegistry || {};
+            initSystem(); 
+        } else {
+            // If cloud is empty, we DON'T overwrite if local variables already have data
+            console.warn("Cloud is empty. Ready for first import.");
+        }
+        handleRouteLogic();
+    });
 }
 
 // --- 11. INITIALIZATION ---
@@ -539,4 +578,5 @@ window.onload = () => {
     const dateInput = document.getElementById('attendanceDate');
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 };
+
 

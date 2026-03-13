@@ -17,13 +17,23 @@ window.onload = () => {
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
     
     initSystem();
+
+    // NEW: Check if opened from a QR Scan
+    const urlParams = new URLSearchParams(window.location.search);
+    const verifyId = urlParams.get('verify');
+    if (verifyId) {
+        // Switch to verify section and run the search
+        showSection('verify-student', document.querySelector('[onclick*="verify-student"]'));
+        document.getElementById('verifyInput').value = verifyId;
+        verifyStudent();
+    }
 };
 
 function initSystem() {
     updateAcademicStats();
     updateCourseDropdown();
     refreshStudentDropdown();
-    renderEnrolmentTable(); // Make sure this line exists!
+    renderEnrolmentTable();
     renderAttendance();
     updateFinancialSummary();
     renderTransactions();
@@ -52,16 +62,22 @@ function showSection(id, btn) {
 function filterStudents() {
     const searchQuery = document.getElementById('studentSearch').value.toLowerCase();
     const courseQuery = document.getElementById('courseFilter').value;
-    const statusQuery = document.getElementById('statusFilter').value;
+    const statusQuery = document.getElementById('statusFilter').value; // Get Status Value
 
     const filtered = students.filter(s => {
         const matchesSearch = s.name.toLowerCase().includes(searchQuery) || s.id.includes(searchQuery);
         const matchesCourse = (courseQuery === "All" || s.course === courseQuery);
-        const matchesStatus = (statusQuery === "All" || (s.status || "Active") === statusQuery);
+        
+        // Match status (default to 'Active' if status is missing in record)
+        const currentStatus = s.status || "Active";
+        const matchesStatus = (statusQuery === "All" || currentStatus === statusQuery);
+        
         return matchesSearch && matchesCourse && matchesStatus;
     });
 
+    // Update the tables with the triple-filtered list
     renderEnrolmentTable(filtered);
+    renderAttendance(filtered);
 }
 
 function renderEnrolmentTable(dataToRender = students) {
@@ -187,27 +203,16 @@ function renderTransactions() {
     const list = document.getElementById('transactionList');
     if (!list) return;
 
-    // We map both, ensuring we use 'name' for both so the list can display them
-    const incomeLogs = transactions.map((t, idx) => ({ 
-        ...t, 
-        type: 'Income', 
-        displayName: t.name, 
-        originalIndex: idx 
-    }));
-    
-    const expenseLogs = expenses.map((e, idx) => ({ 
-        ...e, 
-        type: 'Expense', 
-        displayName: e.category, // Use category as the name for expenses
-        originalIndex: idx 
-    }));
+    // Create labeled logs so we know where they came from
+    const incomeLogs = transactions.map((t, idx) => ({ ...t, type: 'Income', originalIndex: idx }));
+    const expenseLogs = expenses.map((e, idx) => ({ ...e, type: 'Expense', name: e.category, originalIndex: idx }));
 
     const allLogs = [...incomeLogs, ...expenseLogs];
 
     list.innerHTML = allLogs.map(item => `
         <li style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
             <span>
-                <strong style="color: ${item.type === 'Income' ? '#22c55e' : '#ef4444'}">${item.type}</strong>: ${item.displayName}
+                <strong style="color: ${item.type === 'Income' ? '#22c55e' : '#ef4444'}">${item.type}</strong>: ${item.name}
                 <br><small style="color:#64748b;">${item.date}</small>
             </span>
             <div style="text-align: right; display: flex; align-items: center; gap: 8px;">
@@ -239,52 +244,76 @@ function showMonthlyRevenue() {
 // --- ID CARD PRINTING ---
 
     // --- UPDATED ID CARD PRINTING ---
+// --- UPDATED ID CARD PRINTING WITH QR CODE ---
 function printIdCard(id) {
     const s = students.find(stu => stu.id === id);
-    if (!s) return alert("Student record not found.");
+    if (!s) return;
 
-    // 1. Fill Text Data
-    document.getElementById('idCardName').innerText = s.name.toUpperCase();
-    document.getElementById('idCardID').innerText = `#${s.id}`;
-    document.getElementById('idCardCourse').innerText = s.course;
-    document.getElementById('idCardJoin').innerText = s.joiningDate;
+    // Replace 'YOUR_GITHUB_URL' with your actual GitHub Pages link
+    // Example: https://armaninstitute.github.io/manager/
+    const baseUrl = window.location.href.split('?')[0]; 
+    const qrData = `${baseUrl}?verify=${s.id}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
+    // Open a clean print window
+    const printWin = window.open('', '_blank');
+    
+    // Construct the professional HTML structure
+    const cardHtml = `
+        <div>
+            <div class="id-header-banner">
+                <h2>Arman Institute</h2>
+                <p class="id-sub-text">VOCATIONAL & LANGUAGE TRAINING CENTRE</p>
+            </div>
+            
+            <div class="id-body">
+                <div id="printPhotoContainer">
+                    ${s.photo ? `<img src="${s.photo}">` : '<span style="font-size:40px;">👤</span>'}
+                </div>
+                
+                <div class="id-info">
+                    <div class="info-row">
+                        <span class="info-label">Student Name</span>
+                        <span class="info-value">${s.name.toUpperCase()}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Course Enrolled</span>
+                        <span class="info-value">${s.course}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Date of Joining</span>
+                        <span class="info-value">${s.joiningDate}</span>
+                    </div>
+                </div>
+            </div>
 
-    // 2. Handle Photo Logic (Targeting the new printPhotoContainer ID)
-    const photoBox = document.getElementById('printPhotoContainer');
-    if (s.photo) {
-        photoBox.innerHTML = `<img src="${s.photo}" style="width:100%; height:100%; object-fit:cover;">`;
-    } else {
-        photoBox.innerHTML = `<span style="font-size: 40px;">👤</span>`;
-    }
+            <div class="id-qr-box">
+                <img src="${qrUrl}" alt="QR Code">
+                <span>SCAN TO VERIFY</span>
+            </div>
+            
+            <div class="id-footer-tag">ID: ${s.id}</div>
+        </div>
+    `;
 
-    // 3. Open Print Window and write full HTML context
-    const prt = window.open('', '_blank');
-    prt.document.write(`
+    printWin.document.write(`
         <html>
         <head>
             <title>ID Card - ${s.name}</title>
+            <link rel="stylesheet" href="style.css">
             <style>
-                body { 
-                    margin: 40px; 
-                    display: flex; 
-                    justify-content: center; 
-                    font-family: sans-serif; 
-                }
-                @media print {
-                    body { margin: 0; }
-                    button { display: none; }
-                }
+                body { background: white; display: flex; justify-content: center; padding-top: 50px; }
             </style>
         </head>
-        <body onload="setTimeout(function(){ window.print(); window.close(); }, 300)">
-            ${document.getElementById('printIdCardArea').innerHTML}
+        <body onload="setTimeout(function(){ window.print(); window.close(); }, 500)">
+            <div id="printIdCardArea" style="display:block !important;">
+                ${cardHtml}
+            </div>
         </body>
         </html>
     `);
     
-    prt.document.close();
+    printWin.document.close();
 }
-
 // --- PROFILE & CALENDAR ---
 function viewProfile(id) {
     currentViewStudentId = id;
@@ -468,4 +497,74 @@ function previewImage(input) {
     };
     if (file) reader.readAsDataURL(file);
 }
+function verifyStudent() {
+    const id = document.getElementById('verifyInput').value.trim();
+    const s = students.find(stu => stu.id === id);
+    const resultDiv = document.getElementById('verifyResult');
 
+    if (!s) {
+        alert("Student ID not found!");
+        resultDiv.style.display = "none";
+        return;
+    }
+
+    // 1. Calculate Attendance Percentage
+    let totalDays = 0;
+    let presentDays = 0;
+    Object.values(attendanceRegistry).forEach(day => {
+        if (day[id]) {
+            totalDays++;
+            if (day[id] === "Present") presentDays++;
+        }
+    });
+    const attPercentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
+
+    // 2. Calculate Total Fees Paid
+    const studentPayments = transactions.filter(t => t.studentId === id);
+    const totalPaid = studentPayments.reduce((sum, t) => sum + Number(t.amount), 0);
+
+    // 3. Get Last 5 Transactions
+    const lastFive = studentPayments.slice(0, 5);
+    const transactionHTML = lastFive.length > 0 
+        ? lastFive.map(t => `
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f1f5f9; font-size:0.85rem;">
+                <span style="color:var(--text-muted);">${t.date}</span>
+                <span style="font-weight:600; color:var(--success);">+₹${t.amount}</span>
+            </div>
+        `).join('')
+        : `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">No payment records found.</p>`;
+
+    // 4. Update the UI
+    resultDiv.style.display = "block";
+    resultDiv.innerHTML = `
+        <div class="card" style="border-left: 5px solid var(--primary);">
+            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 20px;">
+                <img src="${s.photo || 'https://via.placeholder.com/80'}" style="width:100px; height:100px; border-radius:12px; object-fit:cover; border:2px solid #eee;">
+                <div>
+                    <h2 style="margin:0;">${s.name.toUpperCase()}</h2>
+                    <p style="color:var(--text-muted); margin:5px 0;">Course: <b>${s.course}</b> | Status: <b>${s.status || 'Active'}</b></p>
+                </div>
+            </div>
+            
+            <div class="stats-row-grid">
+                <div class="stat-box" style="border-bottom-color: var(--success);">
+                    <p style="color:var(--text-muted); font-size:10px; margin:0; font-weight:bold;">ATTENDANCE</p>
+                    <h2 style="margin:5px 0;">${attPercentage}%</h2>
+                    <small>${presentDays} days present</small>
+                </div>
+                <div class="stat-box" style="border-bottom-color: var(--primary);">
+                    <p style="color:var(--text-muted); font-size:10px; margin:0; font-weight:bold;">TOTAL PAID</p>
+                    <h2 style="margin:5px 0;">₹${totalPaid}</h2>
+                    <small>Full History</small>
+                </div>
+            </div>
+
+            <div style="margin-top:25px; background:#f8fafc; padding:15px; border-radius:12px;">
+                <h4 style="margin:0 0 10px 0; font-size:0.9rem; color:var(--text-main); border-bottom:2px solid #e2e8f0; padding-bottom:5px;">
+                    Last 5 Fee Installments
+                </h4>
+                ${transactionHTML}
+            </div>
+        </div>
+    `;
+}

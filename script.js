@@ -289,29 +289,61 @@ function printIdCard(id) {
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
     
     const printWin = window.open('', '_blank');
+  // Construct the professional HTML structure
+    const cardHtml = `
+        <div>
+            <div class="id-header-banner">
+                <h2>Arman Institute</h2>
+                <p class="id-sub-text">VOCATIONAL & LANGUAGE TRAINING CENTRE</p>
+            </div>
+            
+            <div class="id-body">
+                <div id="printPhotoContainer">
+                    ${s.photo ? `<img src="${s.photo}">` : '<span style="font-size:40px;">👤</span>'}
+                </div>
+                
+                <div class="id-info">
+                    <div class="info-row">
+                        <span class="info-label">Student Name</span>
+                        <span class="info-value">${s.name.toUpperCase()}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Course Enrolled</span>
+                        <span class="info-value">${s.course}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Date of Joining</span>
+                        <span class="info-value">${s.joiningDate}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="id-qr-box">
+                <img src="${qrUrl}" alt="QR Code">
+                <span>SCAN TO VERIFY</span>
+            </div>
+            
+            <div class="id-footer-tag">ID: ${s.id}</div>
+        </div>
+    `;
+
     printWin.document.write(`
         <html>
         <head>
             <title>ID Card - ${s.name}</title>
+            <link rel="stylesheet" href="style.css">
             <style>
-                .card { width: 350px; border: 2px solid #2563eb; border-radius: 15px; padding: 20px; font-family: sans-serif; text-align: center; }
-                .photo { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
-                .qr { width: 100px; margin-top: 10px; }
-                h2 { color: #2563eb; margin: 5px 0; }
+                body { background: white; display: flex; justify-content: center; padding-top: 50px; }
             </style>
         </head>
-        <body onload="window.print(); window.close();">
-            <div class="card">
-                <h2>Arman Institute</h2>
-                ${s.photo ? `<img src="${s.photo}" class="photo">` : '👤'}
-                <h3>${s.name.toUpperCase()}</h3>
-                <p>Course: ${s.course}<br>ID: #${s.id}</p>
-                <img src="${qrUrl}" class="qr"><br>
-                <small>SCAN TO VERIFY</small>
+        <body onload="setTimeout(function(){ window.print(); window.close(); }, 500)">
+            <div id="printIdCardArea" style="display:block !important;">
+                ${cardHtml}
             </div>
         </body>
         </html>
     `);
+    
     printWin.document.close();
 }
 
@@ -579,6 +611,7 @@ window.onload = () => {
     const dateInput = document.getElementById('attendanceDate');
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 };
+
 
 
 

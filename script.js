@@ -2,13 +2,14 @@
 const firebaseConfig = {
     apiKey: "AIzaSyDXv14dGQgPln72g_kMFHMOAoEYnxkTrOM",
     authDomain: "armaninstitute-d3e37.firebaseapp.com",
-   databaseURL: "https://armaninstitute-d3e37-default-rtdb.firebaseio.com", 
+    // This exact URL prevents the regional warning in your console
+    databaseURL: "https://armaninstitute-d3e37-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "armaninstitute-d3e37",
     storageBucket: "armaninstitute-d3e37.firebasestorage.app",
     messagingSenderId: "921004735664",
     appId: "1:921004735664:web:9f01e218853596cc0ccf75",
     measurementId: "G-B7RV2E5PDG"
-};
+};;
 
 // Admin Password
 const ADMIN_PASSWORD = "Guru@1915"; // Change this to your preferred password
@@ -578,6 +579,7 @@ window.onload = () => {
     const dateInput = document.getElementById('attendanceDate');
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 };
+
 
 
 

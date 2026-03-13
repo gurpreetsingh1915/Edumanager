@@ -2,7 +2,7 @@
 const firebaseConfig = {
     apiKey: "AIzaSyDXv14dGQgPln72g_kMFHMOAoEYnxkTrOM",
     authDomain: "armaninstitute-d3e37.firebaseapp.com",
-    databaseURL: "https://armaninstitute-d3e37-default-rtdb.asia-southeast1.firebasedatabase.app", 
+   databaseURL: "https://armaninstitute-d3e37-default-rtdb.firebaseio.com", 
     projectId: "armaninstitute-d3e37",
     storageBucket: "armaninstitute-d3e37.firebasestorage.app",
     messagingSenderId: "921004735664",
@@ -11,7 +11,7 @@ const firebaseConfig = {
 };
 
 // Admin Password
-const ADMIN_PASSWORD = "admin"; // Change this to your preferred password
+const ADMIN_PASSWORD = "Guru@1915"; // Change this to your preferred password
 
 // Global State
 let students = [];
@@ -539,3 +539,4 @@ window.onload = () => {
     const dateInput = document.getElementById('attendanceDate');
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 };
+

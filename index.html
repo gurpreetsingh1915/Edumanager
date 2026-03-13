@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduManager Pro | Institute Management</title>
+    <title>EduManager Pro | Arman Institute</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app-container">
         <nav class="sidebar">
-           <div class="logo" style="display: flex; align-items: center; gap: 10px;">
-    <img src="logo.jpg" alt="Logo" style="width: 40px; height: 40px; object-fit: contain;">
-    <h2>EduManager <span>Pro</span></h2>
-</div>
+            <div class="logo">
+                <h2>EduManager <span>Pro</span></h2>
+            </div>
             <ul>
                 <li class="nav-item active" onclick="showSection('enrolment', this)">Students Enrolment</li>
                 <li class="nav-item" onclick="showSection('attendance', this)">Daily Attendance</li>
                 <li class="nav-item" onclick="showSection('fee-collection', this)">Fee Collection</li>
                 <li class="nav-item" onclick="showSection('expenses', this)">Expenses</li>
                 <li class="nav-item" onclick="showSection('financial-history', this)">Financial History</li>
+                <li class="nav-item" onclick="showSection('verify-student', this)">Verify Record</li>
             </ul>
             <div class="sidebar-footer">
                 <button onclick="exportBackup()" class="btn-report">Export Backup (.json)</button>
@@ -151,6 +151,24 @@
                     <ul id="transactionList" class="transaction-log"></ul>
                 </div>
             </section>
+            <section id="verify-student" class="content-section">
+    <div class="header">
+        <h1>Verify Student Record</h1>
+    </div>
+    
+    <div class="card">
+        <div class="form-group" style="display: flex; gap: 10px; align-items: flex-end;">
+            <div style="flex-grow: 1;">
+                <label>Enter Student ID to Verify</label>
+                <input type="text" id="verifyInput" placeholder="e.g. 1024">
+            </div>
+            <button class="btn-primary" onclick="verifyStudent()">Search Record</button>
+        </div>
+    </div>
+
+    <div id="verifyResult" style="display:none;">
+        </div>
+</section>
         </main>
     </div>
 
@@ -254,4 +272,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-

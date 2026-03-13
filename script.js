@@ -1,34 +1,69 @@
-// --- DATABASE INITIALIZATION ---
-const STU_KEY = 'stuData';
-const TRANS_KEY = 'transData';
-const EXP_KEY = 'expData';
-const ATT_KEY = 'attendanceRegistry';
+// --- FIREBASE CONFIGURATION ---
+const firebaseConfig = {
+    apiKey: "AIzaSyDXv14dGQgPln72g_kMFHMOAoEYnxkTrOM",
+    authDomain: "armaninstitute-d3e37.firebaseapp.com",
+    databaseURL: "https://armaninstitute-d3e37-default-rtdb.firebaseio.com", 
+    projectId: "armaninstitute-d3e37",
+    storageBucket: "armaninstitute-d3e37.firebasestorage.app",
+    messagingSenderId: "921004735664",
+    appId: "1:921004735664:web:9f01e218853596cc0ccf75",
+    measurementId: "G-B7RV2E5PDG"
+};
 
-let students = JSON.parse(localStorage.getItem(STU_KEY)) || [];
-let transactions = JSON.parse(localStorage.getItem(TRANS_KEY)) || [];
-let expenses = JSON.parse(localStorage.getItem(EXP_KEY)) || [];
-let attendanceRegistry = JSON.parse(localStorage.getItem(ATT_KEY)) || {};
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// --- DATA VARIABLES ---
+let students = [];
+let transactions = [];
+let expenses = [];
+let attendanceRegistry = {};
 
 let currentViewStudentId = null;
 let currentCalDate = new Date();
 
+// --- LIVE DATA SYNC ---
 window.onload = () => {
     const dateInput = document.getElementById('attendanceDate');
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
-    
-    initSystem();
 
-    // NEW: Check if opened from a QR Scan
-    const urlParams = new URLSearchParams(window.location.search);
-    const verifyId = urlParams.get('verify');
-    if (verifyId) {
-        // Switch to verify section and run the search
-        showSection('verify-student', document.querySelector('[onclick*="verify-student"]'));
-        document.getElementById('verifyInput').value = verifyId;
-        verifyStudent();
-    }
+    // 1. Listen for Real-time Cloud Updates
+    db.ref('/').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            students = data.students || [];
+            transactions = data.transactions || [];
+            expenses = data.expenses || [];
+            attendanceRegistry = data.attendanceRegistry || {};
+            initSystem(); // Refresh all tables with cloud data
+        }
+
+        // 2. Handle Login & QR Verification Logic
+        handleRouteLogic();
+    });
 };
 
+function handleRouteLogic() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const verifyId = urlParams.get('verify');
+
+    if (verifyId) {
+        // PUBLIC QR VIEW: No login needed, hide sidebar
+        document.getElementById('loginModal').style.display = 'none';
+        document.querySelector('.sidebar').style.display = 'none';
+        showSection('verify-student', null);
+        document.getElementById('verifyInput').value = verifyId;
+        verifyStudent();
+    } else {
+        // ADMIN DASHBOARD: Check if logged in
+        if (sessionStorage.getItem('isAdmin') === 'true') {
+            document.getElementById('loginModal').style.display = 'none';
+        } else {
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+    }
+}
 function initSystem() {
     updateAcademicStats();
     updateCourseDropdown();
@@ -40,10 +75,14 @@ function initSystem() {
 }
 
 function saveData() {
-    localStorage.setItem(STU_KEY, JSON.stringify(students));
-    localStorage.setItem(TRANS_KEY, JSON.stringify(transactions));
-    localStorage.setItem(EXP_KEY, JSON.stringify(expenses));
-    localStorage.setItem(ATT_KEY, JSON.stringify(attendanceRegistry));
+    db.ref('/').set({
+        students,
+        transactions,
+        expenses,
+        attendanceRegistry
+    }).then(() => {
+        console.log("Cloud Backup Successful");
+    });
 }
 
 // --- NAVIGATION ---
@@ -604,4 +643,21 @@ window.onload = () => {
         showSection('verify-student', null); 
     }
 };
+function migrateLocalToCloud() {
+    if(!confirm("Push all existing records from this laptop to the Cloud?")) return;
+
+    const oldStudents = JSON.parse(localStorage.getItem('stuData')) || [];
+    const oldTrans = JSON.parse(localStorage.getItem('transData')) || [];
+    const oldExp = JSON.parse(localStorage.getItem('expData')) || [];
+    const oldAtt = JSON.parse(localStorage.getItem('attendanceRegistry')) || {};
+
+    db.ref('/').set({
+        students: oldStudents,
+        transactions: oldTrans,
+        expenses: oldExp,
+        attendanceRegistry: oldAtt
+    }).then(() => {
+        alert("Migration Successful! All data is now live.");
+    });
+}
 

@@ -268,7 +268,18 @@
         </div>
     </div>
     </div>
-
+<div id="loginModal" class="modal" style="display: flex;">
+    <div class="modal-content" style="text-align: center;">
+        <div class="logo"><h2>ARMAN <span>INSTITUTE</span></h2></div>
+        <p>Admin Access Required</p>
+        <div class="form-group">
+            <input type="password" id="adminPassInput" placeholder="Enter Admin Password">
+        </div>
+        <button class="btn-primary" style="width: 100%;" onclick="checkAdminLogin()">Login to Dashboard</button>
+        <p id="loginError" style="color: var(--danger); font-size: 12px; margin-top: 10px; display: none;">Incorrect Password!</p>
+    </div>
+</div>
     <script src="script.js"></script>
 </body>
 </html>
+

@@ -660,4 +660,12 @@ function migrateLocalToCloud() {
         alert("Migration Successful! All data is now live.");
     });
 }
+// --- SECURE AUTO-LOGIN ---
+firebase.auth().signInAnonymously()
+    .then(() => {
+        console.log("Secure Connection Established");
+    })
+    .catch((error) => {
+        console.error("Connection Error: ", error.message);
+    });
 

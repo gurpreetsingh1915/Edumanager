@@ -277,3 +277,50 @@ td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     color: var(--text-muted) !important;
     letter-spacing: 0.5px !important;
 }
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column; /* Stack sidebar on top of content */
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        padding: 10px;
+        position: relative;
+    }
+
+    .sidebar ul {
+        display: flex;
+        overflow-x: auto; /* Allow horizontal scrolling for menu items */
+        padding-bottom: 10px;
+    }
+
+    .nav-item {
+        white-space: nowrap; /* Prevent menu text from wrapping */
+        padding: 8px 15px;
+        margin-right: 5px;
+    }
+
+    .main-content {
+        padding: 15px;
+    }
+
+    /* Make tables scrollable so they don't break the layout */
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .stats-bar {
+        grid-template-columns: 1fr; /* Stack stat cards vertically */
+        gap: 10px;
+    }
+
+    /* Hide less important columns on small screens if needed */
+    th:nth-child(4), td:nth-child(4) {
+        display: none; /* Example: hide Joining Date on mobile */
+    }
+}
